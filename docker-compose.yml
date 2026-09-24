@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: ./laravel-api-core
+      dockerfile: Dockerfile
+    container_name: taskflow-laravel
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./laravel-api-core:/var/www/html
+    networks:
+      - taskflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  queue:
+    build:
+      context: ./laravel-api-core
+      dockerfile: Dockerfile
+    container_name: taskflow-queue
+    command: php artisan queue:work --tries=3
+    volumes:
+      - ./laravel-api-core:/var/www/html
+    networks:
+      - taskflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  go-notification-service:
+    build:
+      context: ./go-notification-service
+      dockerfile: Dockerfile
+    container_name: taskflow-notification
+    ports:
+      - "50051:50051"
+    env_file:
+      - ./go-notification-service/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - taskflow
+
+networks:
+  taskflow:
+    driver: bridge

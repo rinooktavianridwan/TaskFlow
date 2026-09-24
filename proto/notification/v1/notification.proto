@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+// 1. Tambahkan suffix versi (.v1) sesuai aturan Buf
+package notification.v1;
+
+option go_package = "go-notification-service/pb/notification/v1;v1";
+
+service NotificationService {
+  rpc SendVerificationEmail(SendVerificationEmailRequest) returns (SendVerificationEmailResponse);
+  rpc SendInvitationEmail(SendInvitationEmailRequest) returns (SendInvitationEmailResponse);
+  rpc ScheduleTaskReminder(ScheduleTaskReminderRequest) returns (ScheduleTaskReminderResponse);
+}
+
+// ==========================================
+// PAYLOAD: VERIFICATION
+// ==========================================
+message SendVerificationEmailRequest {
+  int64 user_id = 1;
+  string name = 2;
+  string email = 3;
+  string token = 4;
+}
+
+message SendVerificationEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ==========================================
+// PAYLOAD: INVITATION
+// ==========================================
+message SendInvitationEmailRequest {
+  int64 project_id = 1;
+  string project_name = 2;
+  string target_email = 3;
+  string token = 4;
+}
+
+message SendInvitationEmailResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ==========================================
+// PAYLOAD: REMINDER
+// ==========================================
+message ScheduleTaskReminderRequest {
+  int64 task_id = 1;
+  string task_title = 2;
+  string project_name = 3;
+  string assignee_email = 4;
+  string due_date = 5;
+}
+
+message ScheduleTaskReminderResponse {
+  bool success = 1;
+  string message = 2;
+}
