@@ -1,0 +1,18 @@
+services:
+  go-notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-notification
+    ports:
+      - "50051:50051"
+    env_file:
+      - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - taskflow
+
+networks:
+  taskflow:
+    external: true

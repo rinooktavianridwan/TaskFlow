@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-laravel
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - taskflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskflow-queue
+    command: php artisan queue:work --tries=3
+    volumes:
+      - .:/var/www/html
+    networks:
+      - taskflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
+networks:
+  taskflow:
+    external: true

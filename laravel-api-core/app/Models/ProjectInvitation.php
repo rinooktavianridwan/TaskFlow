@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
  * @property int                     $id
  * @property int                     $project_id
  * @property string                  $email
+ * @property string                  $role
  * @property string                  $token
  * @property string                  $status
  * @property string|null             $created_at
@@ -26,6 +27,7 @@ class ProjectInvitation extends Model
     protected $fillable = [
         'project_id',
         'email',
+        'role',
         'token',
         'status',
     ];
@@ -34,6 +36,7 @@ class ProjectInvitation extends Model
         'id'         => 'integer',
         'project_id' => 'integer',
         'email'      => 'string',
+        'role'       => 'string',
         'token'      => 'string',
         'status'     => 'string',
         'created_at' => 'datetime',

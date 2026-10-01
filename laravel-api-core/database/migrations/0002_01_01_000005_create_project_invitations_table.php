@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('project_id');
             $table->string('email');
+            $table->enum('role', ['owner', 'editor', 'viewer'])->default('viewer');
             $table->string('token');
             $table->enum('status', ['pending', 'accepted', 'rejected', 'declined'])->default('pending');
             $table->timestamps();

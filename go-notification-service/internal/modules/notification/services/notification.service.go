@@ -1,11 +1,14 @@
 package services
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
 	"net/smtp"
 	"os"
+
+	"github.com/mailtrap/mailtrap-go"
 
 	"go-notification-service/internal/modules/notification/contract"
 )
@@ -19,14 +22,52 @@ func NewNotificationService(repo contract.Repository) contract.Service {
 }
 
 func (s *notificationServiceImpl) SendEmail(to, subject, body string) error {
-	host := os.Getenv("SMTP_HOST")
-	if host == "" {
-		log.Printf("[SMTP fallback/log] To: %s | Subject: %s | Body: %s", to, subject, body)
-		// Fallback log untuk mencatat email yang gagal dikirim
+	provider := os.Getenv("MAIL_PROVIDER") // "mailtrap" atau "smtp"
+
+	var err error
+	switch provider {
+	case "smtp":
+		err = sendSmtpMail(to, subject, body)
+	case "mailtrap":
+		err = sendMailtrapMail(to, subject, body)
+	default:
+		log.Printf("[Mail fallback/log] To: %s | Subject: %s | Body: %s", to, subject, body)
 		_ = s.repo.SaveNotificationLog(to, "SUCCESS_FALLBACK")
 		return nil
 	}
 
+	if err != nil {
+		_ = s.repo.SaveNotificationLog(to, "FAILED")
+		return err
+	}
+
+	_ = s.repo.SaveNotificationLog(to, "SUCCESS")
+	return nil
+}
+
+// ---------- Mailtrap (HTTP API) ----------
+
+func sendMailtrapMail(to, subject, body string) error {
+	client, err := mailtrap.NewClient(os.Getenv("MAILTRAP_API_TOKEN"))
+	if err != nil {
+		return err
+	}
+
+	_, _, err = client.Send(context.Background(), &mailtrap.SendRequest{
+		From:     mailtrap.Address{Email: os.Getenv("MAILTRAP_FROM_EMAIL"), Name: os.Getenv("MAILTRAP_FROM_NAME")},
+		To:       []mailtrap.Address{{Email: to}},
+		Subject:  subject,
+		Text:     body,
+		Category: "TaskFlow Notification",
+	})
+
+	return err
+}
+
+// ---------- Gmail / SMTP umum (STARTTLS) ----------
+
+func sendSmtpMail(to, subject, body string) error {
+	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")
 	user := os.Getenv("SMTP_USERNAME")
 	pass := os.Getenv("SMTP_PASSWORD")
@@ -34,36 +75,17 @@ func (s *notificationServiceImpl) SendEmail(to, subject, body string) error {
 
 	addr := fmt.Sprintf("%s:%s", host, port)
 	auth := smtp.PlainAuth("", user, pass, host)
-
 	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, to, subject, body))
-	tlsConfig := &tls.Config{ServerName: host}
-	
-	// Proses pengiriman
-	err := sendSmtpMail(addr, host, auth, from, to, msg, tlsConfig)
-	if err != nil {
-		// Jika gagal kirim email, simpan status FAILED ke database
-		_ = s.repo.SaveNotificationLog(to, "FAILED")
-		return err
-	}
 
-	// Jika berhasil kirim email, simpan status SUCCESS ke database
-	_ = s.repo.SaveNotificationLog(to, "SUCCESS")
-	return nil
-}
-
-func sendSmtpMail(addr, host string, auth smtp.Auth, from, to string, msg []byte, tlsConfig *tls.Config) error {
-	conn, err := tls.Dial("tcp", addr, tlsConfig)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	client, err := smtp.NewClient(conn, host)
+	client, err := smtp.Dial(addr)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
+	if err := client.StartTLS(&tls.Config{ServerName: host}); err != nil {
+		return err
+	}
 	if err := client.Auth(auth); err != nil {
 		return err
 	}

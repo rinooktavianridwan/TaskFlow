@@ -27,6 +27,14 @@ class Project extends Model
         'description',
     ];
 
+    protected $casts = [
+        'id' => 'integer',
+        'name' => 'string',
+        'description' => 'string',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'project_id');

@@ -1,0 +1,15 @@
+# Environment files — berlaku untuk semua subfolder (Laravel, Go, React, dst)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Editor/IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts umum
+*.log

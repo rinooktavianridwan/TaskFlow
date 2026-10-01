@@ -10,7 +10,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 /**
  * App\Models\User
@@ -65,16 +69,16 @@ class User extends Authenticatable
 
     public function sendEmailVerificationNotification()
     {
-        $verificationUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        $verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
-            \Illuminate\Support\Carbon::now()->addMinutes(\Illuminate\Support\Facades\Config::get('auth.verification.expire', 60)),
+            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
             [
-                'id' => $this->getKey(),
+                'id'   => $this->getKey(),
                 'hash' => sha1($this->getEmailForVerification()),
-            ]
+            ],
         );
 
-        // TODO: Di sinilah gRPC Client akan menembak ke Go nanti.
-        \Illuminate\Support\Facades\Log::info("Siap tembak gRPC! Verifikasi untuk {$this->email} ke URL: {$verificationUrl}");
+        // TODO: gRPC Client akan menembak ke Go nanti.
+        Log::info("Siap tembak gRPC! Verifikasi untuk {$this->email} ke URL: {$verificationUrl}");
     }
 }
