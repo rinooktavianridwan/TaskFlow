@@ -2,27 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 
 /**
  * App\Models\Task
  *
- * @property int                            $id
- * @property int                            $project_id
- * @property int                            $assigned_to
- * @property string                         $title
- * @property string                         $description
- * @property string                         $status
- * @property string                         $due_date
- * @property string|null                    $created_at
- * @property string|null                    $updated_at
+ * @property int                                $id
+ * @property int                                $project_id
+ * @property int|null                           $assigned_to
+ * @property string                             $title
+ * @property string|null                        $description
+ * @property string                             $status
+ * @property Carbon|null                        $due_date
+ * @property Carbon|null                        $created_at
+ * @property Carbon|null                        $updated_at
  *
- * @property-read Collection|Project        $project
- * @property-read Collection|User           $user
- * @property-read Collection|TaskActivity[] $taskActivities
+ * @property-read Project                       $project
+ * @property-read User|null                     $assignee
+ * @property-read Collection<int, TaskActivity> $taskActivities
  */
 class Task extends Model
 {

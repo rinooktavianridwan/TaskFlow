@@ -5,11 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-/**
- * @property-read string $name
- * @property-read string $description
- *  */
-class UpdateProjectRequest extends FormRequest
+class IndexMemberRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -27,8 +23,8 @@ class UpdateProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'        => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'name'     => 'nullable|string|max:255',
         ];
     }
 }

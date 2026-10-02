@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\ProjectRole;
 use App\Models\Project;
 use App\Models\User;
 
@@ -9,7 +10,7 @@ class ProjectPolicy
 {
     public function view(User $user, Project $project): bool
     {
-        return $project->projectUsers()->where('user_id', $user->id)->exists();
+        return $project->hasMember($user);
     }
 
     // semua user login boleh bikin project baru
@@ -20,15 +21,22 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        return $project->projectUsers()
-            ->where('user_id', $user->id)
-            ->where('role', 'owner')
-            ->exists();
+        return $project->hasRole($user, ProjectRole::Owner);
     }
 
     // aturan sama: owner only
     public function delete(User $user, Project $project): bool
     {
         return $this->update($user, $project);
+    }
+
+    public function createTask(User $user, Project $project): bool
+    {
+        return $project->hasRole($user, ProjectRole::Owner, ProjectRole::Editor);
+    }
+
+    public function removeMember(User $user, Project $project, User $targetUser): bool
+    {
+        return $this->update($user, $project) || $user->id === $targetUser->id;
     }
 }

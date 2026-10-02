@@ -10,6 +10,7 @@ use App\Models\Project;
 use Illuminate\Http\JsonResponse;
 use App\Services\ProjectService;
 use App\DTOs\CreateProjectData;
+use Illuminate\Http\Response;
 use Throwable;
 
 class ProjectController extends Controller
@@ -25,19 +26,12 @@ class ProjectController extends Controller
         $projects = $this->service->index($request->validated(), auth()->user())
             ->paginate($request->input('per_page', 15));
 
-        return $this->success([
-            'items' => ProjectResource::collection($projects),
-            'meta'  => [
-                'current_page' => $projects->currentPage(),
-                'per_page'     => $projects->perPage(),
-                'total'        => $projects->total(),
-            ],
-        ]);
+        return $this->paginated($projects, ProjectResource::class);
     }
 
     public function show(Project $project): JsonResponse
     {
-        return $this->success(new ProjectResource($project));
+        return $this->success(new ProjectResource($this->service->withRole($project, auth()->user())));
     }
 
     /**
@@ -52,15 +46,18 @@ class ProjectController extends Controller
 
     public function update(UpdateProjectRequest $request, Project $project): JsonResponse
     {
-        $this->service->update($project, $request->validated());
+        $project = $this->service->update($project, $request->validated());
 
-        return $this->success(message: 'Project updated successfully.', code: 204);
+        return $this->success(
+            new ProjectResource($this->service->withRole($project, auth()->user())),
+            'Project updated successfully.',
+        );
     }
 
-    public function destroy(Project $project): JsonResponse
+    public function destroy(Project $project): Response
     {
         $this->service->delete($project);
 
-        return $this->success(message: 'Project deleted successfully.', code: 204);
+        return $this->noContent();
     }
 }

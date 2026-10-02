@@ -4,8 +4,6 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use phpDocumentor\Reflection\DocBlock\Description;
-
 
 /**
  * @property-read string $name

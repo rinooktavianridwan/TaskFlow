@@ -2,34 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 
 /**
  * App\Models\User
  *
- * @property int                           $id
- * @property string                        $name
- * @property string                        $email
- * @property string|null                   $email_verified_at
- * @property string                        $password
- * @property string|null                   $remember_token
- * @property string|null                   $created_at
- * @property string|null                   $updated_at
+ * @property int                               $id
+ * @property string                            $name
+ * @property string                            $email
+ * @property Carbon|null                       $email_verified_at
+ * @property string                            $password
+ * @property string|null                       $remember_token
+ * @property Carbon|null                       $created_at
+ * @property Carbon|null                       $updated_at
  *
- * @property-read Collection|Task[]        $tasks
- * @property-read Collection|ProjectUser[] $projectUsers
+ * @property-read Collection<int, Task>        $tasks
+ * @property-read Collection<int, ProjectUser> $projectUsers
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -65,20 +61,5 @@ class User extends Authenticatable
     public function projectUsers(): HasMany
     {
         return $this->hasMany(ProjectUser::class, 'user_id');
-    }
-
-    public function sendEmailVerificationNotification()
-    {
-        $verificationUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
-            [
-                'id'   => $this->getKey(),
-                'hash' => sha1($this->getEmailForVerification()),
-            ],
-        );
-
-        // TODO: gRPC Client akan menembak ke Go nanti.
-        Log::info("Siap tembak gRPC! Verifikasi untuk {$this->email} ke URL: {$verificationUrl}");
     }
 }

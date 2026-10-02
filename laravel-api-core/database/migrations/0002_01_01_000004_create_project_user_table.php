@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('project_id');
             $table->unsignedBigInteger('user_id');
-            $table->enum('role', ['owner', 'member'])->default('member');
+            $table->unique(['project_id', 'user_id']);
+            $table->string('role');
             $table->timestamps();
         });
     }

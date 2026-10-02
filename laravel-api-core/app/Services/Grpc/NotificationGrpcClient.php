@@ -5,6 +5,7 @@ namespace App\Services\Grpc;
 use Grpc\ChannelCredentials;
 use Illuminate\Support\Facades\Log;
 use Notification\V1\NotificationServiceClient;
+use Notification\V1\SendInvitationEmailRequest;
 use Notification\V1\SendVerificationEmailRequest;
 
 class NotificationGrpcClient
@@ -47,5 +48,33 @@ class NotificationGrpcClient
         }
 
         return $response->getSuccess();
+    }
+
+    public function sendInvitationEmail(int $projectId, string $projectName, string $email, string $token): bool
+    {
+        $request = new SendInvitationEmailRequest();
+        $request->setProjectId($projectId);
+        $request->setProjectName($projectName);
+        $request->setTargetEmail($email);
+        $request->setToken($token);
+
+        [$response, $status] = $this->client->SendInvitationEmail($request)->wait();
+
+        if ($status->code !== \Grpc\STATUS_OK) {
+            Log::error('gRPC SendInvitationEmail gagal', [
+                'project_id' => $projectId,
+                'email'      => $email,
+                'code'       => $status->code,
+                'detail'     => $status->details,
+            ]);
+
+            throw new \RuntimeException("gRPC call gagal: {$status->details}");
+        }
+
+        if (! $response->getSuccess()) {
+            throw new \RuntimeException("Email undangan gagal dikirim: {$response->getMessage()}");
+        }
+
+        return true;
     }
 }

@@ -31,7 +31,15 @@ func (c *NotificationController) SendVerificationEmail(ctx context.Context, req 
 }
 
 func (c *NotificationController) SendInvitationEmail(ctx context.Context, req *pb.SendInvitationEmailRequest) (*pb.SendInvitationEmailResponse, error) {
-	return &pb.SendInvitationEmailResponse{Success: false, Message: "belum diimplementasi"}, nil
+	subject := fmt.Sprintf("Undangan bergabung ke project %s di TaskFlow", req.GetProjectName())
+	body := fmt.Sprintf("Halo,\n\nKamu diundang bergabung ke project %s di TaskFlow.\n\nToken undangan kamu: %s\n\nMasuk ke TaskFlow untuk menerima undangan ini.", req.GetProjectName(), req.GetToken())
+
+	if err := c.emailService.SendEmail(req.GetTargetEmail(), subject, body); err != nil {
+		log.Printf("gagal kirim undangan ke %s: %v", req.GetTargetEmail(), err)
+		return &pb.SendInvitationEmailResponse{Success: false, Message: err.Error()}, nil
+	}
+
+	return &pb.SendInvitationEmailResponse{Success: true, Message: "Undangan terkirim"}, nil
 }
 
 func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {

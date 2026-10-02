@@ -4,21 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 
 /**
- * App\Models\ProjectUser
+ * App\Models\ProjectInvitation
  *
- * @property int                     $id
- * @property int                     $project_id
- * @property string                  $email
- * @property string                  $role
- * @property string                  $token
- * @property string                  $status
- * @property string|null             $created_at
- * @property string|null             $updated_at
+ * @property int          $id
+ * @property int          $project_id
+ * @property string       $email
+ * @property string       $role
+ * @property string       $token
+ * @property string       $status
+ * @property Carbon|null  $expires_at
+ * @property Carbon|null  $created_at
+ * @property Carbon|null  $updated_at
  *
- * @property-read Collection|Project $project
+ * @property-read Project $project
  */
 class ProjectInvitation extends Model
 {
@@ -30,6 +31,7 @@ class ProjectInvitation extends Model
         'role',
         'token',
         'status',
+        'expires_at',
     ];
 
     protected $casts = [
@@ -39,6 +41,7 @@ class ProjectInvitation extends Model
         'role'       => 'string',
         'token'      => 'string',
         'status'     => 'string',
+        'expires_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -46,5 +49,10 @@ class ProjectInvitation extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'project_id');
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'token';
     }
 }

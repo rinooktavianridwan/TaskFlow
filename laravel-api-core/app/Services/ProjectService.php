@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\DTOs\CreateProjectData;
-use App\Http\Requests\UpdateProjectRequest;
+use App\Enums\ProjectRole;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,12 +21,14 @@ class ProjectService
         $keyword = $filter['name'] ?? null;
 
         return Project::query()
+            ->with(['projectUsers' => fn($q) => $q->where('user_id', $user->id)])
             ->whereHas('projectUsers', function (Builder $query) use ($user) {
                 $query->where('user_id', $user->id);
             })
             ->when($keyword, function (Builder $query, string $value) {
                 $query->where('name', 'like', "%$value%");
-            });
+            })
+            ->orderByDesc('id');
     }
 
     /**
@@ -42,10 +44,10 @@ class ProjectService
 
             $project->projectUsers()->create([
                 'user_id' => $creator->id,
-                'role'    => 'owner',
+                'role'    => ProjectRole::Owner->value,
             ]);
 
-            return $project;
+            return $this->withRole($project, $creator);
         });
     }
 
@@ -59,5 +61,10 @@ class ProjectService
     public function delete(Project $project): bool
     {
         return $project->delete();
+    }
+
+    public function withRole(Project $project, User $user): Project
+    {
+        return $project->load(['projectUsers' => fn ($q) => $q->where('user_id', $user->id)]);
     }
 }

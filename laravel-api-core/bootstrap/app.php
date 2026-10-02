@@ -5,8 +5,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Auth\AuthenticationException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -30,8 +30,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn(Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ValidationException $e, Request $request) {
             return response()->json([
                 'success' => false,
@@ -40,14 +38,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
-        $exceptions->render(function (AuthorizationException $e, Request $request) {
+        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage() ?: 'You do not have permission to perform this action.',
             ], 403);
         });
 
-        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
             return response()->json([
                 'success' => false,
                 'message' => 'Resource not found.',

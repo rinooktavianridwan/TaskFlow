@@ -4,20 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * App\Models\ProjectUser
  *
- * @property int                     $id
- * @property int                     $user_id
- * @property int                     $project_id
- * @property string                  $role
- * @property string|null             $created_at
- * @property string|null             $updated_at
+ * @property int          $id
+ * @property int          $user_id
+ * @property int          $project_id
+ * @property string       $role
+ * @property Carbon|null  $created_at
+ * @property Carbon|null  $updated_at
  *
- * @property-read Collection|User    $user
- * @property-read Collection|Project $project
+ * @property-read User    $user
+ * @property-read Project $project
  */
 class ProjectUser extends Model
 {

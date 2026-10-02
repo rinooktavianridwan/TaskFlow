@@ -2,14 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ProjectRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-/**
- * @property-read string $name
- * @property-read string $description
- *  */
-class UpdateProjectRequest extends FormRequest
+class UpdateMemberRoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -27,8 +25,7 @@ class UpdateProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'        => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
+            'role' => ['required', Rule::enum(ProjectRole::class)],
         ];
     }
 }

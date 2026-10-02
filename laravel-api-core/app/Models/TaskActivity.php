@@ -4,21 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 
 /**
- * App\Models\TaskActivities
+ * App\Models\TaskActivity
  *
- * @property int                  $id
- * @property int                  $task_id
- * @property int                  $user_id
- * @property string               $action
- * @property string               $description
- * @property string|null          $created_at
- * @property string|null          $updated_at
+ * @property int            $id
+ * @property int            $task_id
+ * @property int|null       $user_id
+ * @property string         $action
+ * @property string         $description
+ * @property Carbon|null    $created_at
+ * @property Carbon|null    $updated_at
  *
- * @property-read Collection|User $user
- * @property-read Collection|Task $tasks
+ * @property-read Task      $task
+ * @property-read User|null $user
  */
 class TaskActivity extends Model
 {
