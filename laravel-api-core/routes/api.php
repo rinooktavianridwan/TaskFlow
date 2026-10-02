@@ -53,7 +53,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Tahap 3: Mengelola detail, update status, dan hapus task
     Route::controller(TaskController::class)->group(function () {
         Route::get('/tasks/{task}', 'show')->middleware('can:view,task');
-        Route::patch('/tasks/{task}', 'update');
+        Route::patch('/tasks/{task}', 'update')->middleware('can:view,task');
         Route::delete('/tasks/{task}', 'destroy')->middleware('can:delete,task');
     });
 

@@ -6,6 +6,7 @@ use App\Enums\ProjectRole;
 use App\Models\Project;
 use App\Models\ProjectUser;
 use App\Models\User;
+use App\Enums\TaskActivityAction;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -53,9 +54,9 @@ class MemberService
     /**
      * @throws Throwable
      */
-    public function remove(Project $project, User $targetUser): bool
+    public function remove(Project $project, User $targetUser, User $actor): bool
     {
-        return DB::transaction(function () use ($project, $targetUser) {
+        return DB::transaction(function () use ($project, $targetUser, $actor) {
             $project->lockRow();
 
             $membership = $project->projectUsers()
@@ -64,6 +65,25 @@ class MemberService
 
             if ($membership->role === ProjectRole::Owner->value) {
                 $this->ensureNotLastOwner($project);
+            }
+
+            $assignedTasks = $project->tasks()
+                ->where('assigned_to', $targetUser->id)
+                ->lockForUpdate()
+                ->get();
+
+            $description = $actor->is($targetUser)
+                ? 'Task unassigned because the assignee left the project.'
+                : 'Task unassigned because the assignee was removed from the project.';
+
+            foreach ($assignedTasks as $task) {
+                $task->update(['assigned_to' => null]);
+
+                $task->taskActivities()->create([
+                    'user_id'     => $actor->id,
+                    'action'      => TaskActivityAction::Assigned->value,
+                    'description' => $description,
+                ]);
             }
 
             return $membership->delete();

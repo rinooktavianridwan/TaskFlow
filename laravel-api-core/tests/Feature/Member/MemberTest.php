@@ -2,6 +2,8 @@
 
 use App\Enums\ProjectRole;
 use App\Models\User;
+use App\Enums\TaskActivityAction;
+use App\Enums\TaskStatus;
 
 // ---------------------------------------------------------------- LIST
 
@@ -185,6 +187,84 @@ test('member bisa keluar sendiri dari project', function () {
         ->assertNoContent();
 
     $this->assertDatabaseMissing('project_user', ['user_id' => $member->id]);
+});
+
+test('mengeluarkan member mengosongkan assignee dan mencatat aktivitas pada task', function () {
+    $owner  = User::factory()->create();
+    $member = User::factory()->create();
+
+    $project = createProject($owner);
+    addMember($project, $member, ProjectRole::Editor);
+
+    $task = $project->tasks()->create([
+        'title'       => 'Task milik member',
+        'description' => null,
+        'assigned_to' => $member->id,
+        'status'      => TaskStatus::Todo->value,
+        'due_date'    => null,
+    ]);
+
+    $otherProject = createProject(User::factory()->create());
+    $otherTask    = $otherProject->tasks()->create([
+        'title'       => 'Task project lain',
+        'description' => null,
+        'assigned_to' => $member->id,
+        'status'      => TaskStatus::Todo->value,
+        'due_date'    => null,
+    ]);
+
+    $this->actingAs($owner)
+        ->deleteJson("/api/projects/{$project->id}/members/{$member->id}")
+        ->assertNoContent();
+
+    $this->assertDatabaseHas('tasks', [
+        'id'          => $task->id,
+        'assigned_to' => null,
+    ]);
+
+    $this->assertDatabaseHas('task_activities', [
+        'task_id'     => $task->id,
+        'user_id'     => $owner->id,
+        'action'      => TaskActivityAction::Assigned->value,
+        'description' => 'Task unassigned because the assignee was removed from the project.',
+    ]);
+
+    $this->assertDatabaseHas('tasks', [
+        'id'          => $otherTask->id,
+        'assigned_to' => $member->id,
+    ]);
+});
+
+test('member yang keluar sendiri mengosongkan assignee dan mencatat dirinya sebagai actor', function () {
+    $owner  = User::factory()->create();
+    $member = User::factory()->create();
+
+    $project = createProject($owner);
+    addMember($project, $member, ProjectRole::Viewer);
+
+    $task = $project->tasks()->create([
+        'title'       => 'Task milik member',
+        'description' => null,
+        'assigned_to' => $member->id,
+        'status'      => TaskStatus::Todo->value,
+        'due_date'    => null,
+    ]);
+
+    $this->actingAs($member)
+        ->deleteJson("/api/projects/{$project->id}/members/{$member->id}")
+        ->assertNoContent();
+
+    $this->assertDatabaseHas('tasks', [
+        'id'          => $task->id,
+        'assigned_to' => null,
+    ]);
+
+    $this->assertDatabaseHas('task_activities', [
+        'task_id'     => $task->id,
+        'user_id'     => $member->id,
+        'action'      => TaskActivityAction::Assigned->value,
+        'description' => 'Task unassigned because the assignee left the project.',
+    ]);
 });
 
 test('editor dan viewer tidak bisa mengeluarkan member lain', function (string $role) {

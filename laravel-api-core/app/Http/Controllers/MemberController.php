@@ -43,7 +43,7 @@ class MemberController extends Controller
      */
     public function destroy(Project $project, User $user): Response
     {
-        $this->service->remove($project, $user);
+        $this->service->remove($project, $user, auth()->user());
 
         return $this->noContent();
     }

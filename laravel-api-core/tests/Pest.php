@@ -6,6 +6,8 @@ use App\Models\Project;
 use App\Models\ProjectInvitation;
 use App\Models\ProjectUser;
 use App\Models\User;
+use App\Enums\TaskStatus;
+use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -55,4 +57,16 @@ function createInvitation(Project $project, string $email, array $overrides = []
         'status'     => InvitationStatus::Pending->value,
         'expires_at' => now()->addDays(7),
     ], $overrides));
+}
+
+/** Buat task. Default: todo, tanpa assignee, tanpa due date. */
+function createTask(Project $project, array $attributes = []): Task
+{
+    return $project->tasks()->create(array_merge([
+        'title'       => 'Task test',
+        'description' => null,
+        'assigned_to' => null,
+        'status'      => TaskStatus::Todo->value,
+        'due_date'    => null,
+    ], $attributes));
 }
