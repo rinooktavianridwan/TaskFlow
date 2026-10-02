@@ -58,4 +58,18 @@ class NotificationServiceClient extends \Grpc\BaseStub {
         $metadata, $options);
     }
 
+    /**
+     * @param \Notification\V1\CancelTaskReminderRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     * @return \Grpc\UnaryCall<\Notification\V1\CancelTaskReminderResponse>
+     */
+    public function CancelTaskReminder(\Notification\V1\CancelTaskReminderRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_simpleRequest('/notification.v1.NotificationService/CancelTaskReminder',
+        $argument,
+        ['\Notification\V1\CancelTaskReminderResponse', 'decode'],
+        $metadata, $options);
+    }
+
 }

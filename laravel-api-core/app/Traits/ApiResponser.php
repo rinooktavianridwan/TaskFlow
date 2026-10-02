@@ -19,7 +19,7 @@ trait ApiResponser
     }
 
     /**
-     * Respons 204 No Content: sukses tanpa body (untuk PATCH/DELETE).
+     * Respons 204 No Content: sukses tanpa body (untuk DELETE).
      */
     protected function noContent(): Response
     {

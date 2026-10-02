@@ -9,6 +9,7 @@ service NotificationService {
   rpc SendVerificationEmail(SendVerificationEmailRequest) returns (SendVerificationEmailResponse);
   rpc SendInvitationEmail(SendInvitationEmailRequest) returns (SendInvitationEmailResponse);
   rpc ScheduleTaskReminder(ScheduleTaskReminderRequest) returns (ScheduleTaskReminderResponse);
+  rpc CancelTaskReminder(CancelTaskReminderRequest) returns (CancelTaskReminderResponse);
 }
 
 // ==========================================
@@ -49,10 +50,20 @@ message ScheduleTaskReminderRequest {
   string task_title = 2;
   string project_name = 3;
   string assignee_email = 4;
+  // RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
   string due_date = 5;
 }
 
 message ScheduleTaskReminderResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CancelTaskReminderRequest {
+  int64 task_id = 1;
+}
+
+message CancelTaskReminderResponse {
   bool success = 1;
   string message = 2;
 }

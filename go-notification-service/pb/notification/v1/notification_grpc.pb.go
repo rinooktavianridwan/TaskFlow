@@ -24,6 +24,7 @@ const (
 	NotificationService_SendVerificationEmail_FullMethodName = "/notification.v1.NotificationService/SendVerificationEmail"
 	NotificationService_SendInvitationEmail_FullMethodName   = "/notification.v1.NotificationService/SendInvitationEmail"
 	NotificationService_ScheduleTaskReminder_FullMethodName  = "/notification.v1.NotificationService/ScheduleTaskReminder"
+	NotificationService_CancelTaskReminder_FullMethodName    = "/notification.v1.NotificationService/CancelTaskReminder"
 )
 
 // NotificationServiceClient is the client API for NotificationService service.
@@ -33,6 +34,7 @@ type NotificationServiceClient interface {
 	SendVerificationEmail(ctx context.Context, in *SendVerificationEmailRequest, opts ...grpc.CallOption) (*SendVerificationEmailResponse, error)
 	SendInvitationEmail(ctx context.Context, in *SendInvitationEmailRequest, opts ...grpc.CallOption) (*SendInvitationEmailResponse, error)
 	ScheduleTaskReminder(ctx context.Context, in *ScheduleTaskReminderRequest, opts ...grpc.CallOption) (*ScheduleTaskReminderResponse, error)
+	CancelTaskReminder(ctx context.Context, in *CancelTaskReminderRequest, opts ...grpc.CallOption) (*CancelTaskReminderResponse, error)
 }
 
 type notificationServiceClient struct {
@@ -73,6 +75,16 @@ func (c *notificationServiceClient) ScheduleTaskReminder(ctx context.Context, in
 	return out, nil
 }
 
+func (c *notificationServiceClient) CancelTaskReminder(ctx context.Context, in *CancelTaskReminderRequest, opts ...grpc.CallOption) (*CancelTaskReminderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelTaskReminderResponse)
+	err := c.cc.Invoke(ctx, NotificationService_CancelTaskReminder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NotificationServiceServer is the server API for NotificationService service.
 // All implementations must embed UnimplementedNotificationServiceServer
 // for forward compatibility.
@@ -80,6 +92,7 @@ type NotificationServiceServer interface {
 	SendVerificationEmail(context.Context, *SendVerificationEmailRequest) (*SendVerificationEmailResponse, error)
 	SendInvitationEmail(context.Context, *SendInvitationEmailRequest) (*SendInvitationEmailResponse, error)
 	ScheduleTaskReminder(context.Context, *ScheduleTaskReminderRequest) (*ScheduleTaskReminderResponse, error)
+	CancelTaskReminder(context.Context, *CancelTaskReminderRequest) (*CancelTaskReminderResponse, error)
 	mustEmbedUnimplementedNotificationServiceServer()
 }
 
@@ -98,6 +111,9 @@ func (UnimplementedNotificationServiceServer) SendInvitationEmail(context.Contex
 }
 func (UnimplementedNotificationServiceServer) ScheduleTaskReminder(context.Context, *ScheduleTaskReminderRequest) (*ScheduleTaskReminderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ScheduleTaskReminder not implemented")
+}
+func (UnimplementedNotificationServiceServer) CancelTaskReminder(context.Context, *CancelTaskReminderRequest) (*CancelTaskReminderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelTaskReminder not implemented")
 }
 func (UnimplementedNotificationServiceServer) mustEmbedUnimplementedNotificationServiceServer() {}
 func (UnimplementedNotificationServiceServer) testEmbeddedByValue()                             {}
@@ -174,6 +190,24 @@ func _NotificationService_ScheduleTaskReminder_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_CancelTaskReminder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelTaskReminderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).CancelTaskReminder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_CancelTaskReminder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).CancelTaskReminder(ctx, req.(*CancelTaskReminderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NotificationService_ServiceDesc is the grpc.ServiceDesc for NotificationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -192,6 +226,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ScheduleTaskReminder",
 			Handler:    _NotificationService_ScheduleTaskReminder_Handler,
+		},
+		{
+			MethodName: "CancelTaskReminder",
+			Handler:    _NotificationService_CancelTaskReminder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

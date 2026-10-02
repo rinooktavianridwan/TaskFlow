@@ -35,6 +35,8 @@ class ScheduleTaskReminderRequest extends \Google\Protobuf\Internal\Message
      */
     protected $assignee_email = '';
     /**
+     * RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
+     *
      * Generated from protobuf field <code>string due_date = 5 [json_name = "dueDate"];</code>
      */
     protected $due_date = '';
@@ -50,6 +52,7 @@ class ScheduleTaskReminderRequest extends \Google\Protobuf\Internal\Message
      *     @type string $project_name
      *     @type string $assignee_email
      *     @type string $due_date
+     *           RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
      * }
      */
     public function __construct($data = null)
@@ -147,6 +150,8 @@ class ScheduleTaskReminderRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
+     *
      * Generated from protobuf field <code>string due_date = 5 [json_name = "dueDate"];</code>
      * @return string
      */
@@ -156,6 +161,8 @@ class ScheduleTaskReminderRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
+     *
      * Generated from protobuf field <code>string due_date = 5 [json_name = "dueDate"];</code>
      * @param string $var
      * @return $this

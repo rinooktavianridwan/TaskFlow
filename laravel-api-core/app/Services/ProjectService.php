@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\CreateProjectData;
 use App\Enums\ProjectRole;
+use App\Jobs\SyncTaskReminderJob;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,13 +59,32 @@ class ProjectService
         return $project->fresh();
     }
 
+    /**
+     * @throws Throwable
+     */
     public function delete(Project $project): bool
     {
-        return $project->delete();
+        return DB::transaction(function () use ($project) {
+            // Task ikut terhapus lewat cascade database, jadi reminder-nya harus dibatalkan manual.
+            $taskIds = $project->tasks()
+                ->whereNotNull('due_date')
+                ->whereNotNull('assigned_to')
+                ->pluck('id');
+
+            $deleted = $project->delete();
+
+            if ($deleted) {
+                foreach ($taskIds as $taskId) {
+                    SyncTaskReminderJob::dispatch($taskId)->afterCommit();
+                }
+            }
+
+            return $deleted;
+        });
     }
 
     public function withRole(Project $project, User $user): Project
     {
-        return $project->load(['projectUsers' => fn ($q) => $q->where('user_id', $user->id)]);
+        return $project->load(['projectUsers' => fn($q) => $q->where('user_id', $user->id)]);
     }
 }

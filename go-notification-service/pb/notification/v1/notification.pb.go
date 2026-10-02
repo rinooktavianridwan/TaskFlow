@@ -278,7 +278,8 @@ type ScheduleTaskReminderRequest struct {
 	TaskTitle     string                 `protobuf:"bytes,2,opt,name=task_title,json=taskTitle,proto3" json:"task_title,omitempty"`
 	ProjectName   string                 `protobuf:"bytes,3,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	AssigneeEmail string                 `protobuf:"bytes,4,opt,name=assignee_email,json=assigneeEmail,proto3" json:"assignee_email,omitempty"`
-	DueDate       string                 `protobuf:"bytes,5,opt,name=due_date,json=dueDate,proto3" json:"due_date,omitempty"`
+	// RFC3339 UTC, contoh: 2026-10-02T12:00:00Z
+	DueDate       string `protobuf:"bytes,5,opt,name=due_date,json=dueDate,proto3" json:"due_date,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -400,6 +401,102 @@ func (x *ScheduleTaskReminderResponse) GetMessage() string {
 	return ""
 }
 
+type CancelTaskReminderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskId        int64                  `protobuf:"varint,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTaskReminderRequest) Reset() {
+	*x = CancelTaskReminderRequest{}
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTaskReminderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTaskReminderRequest) ProtoMessage() {}
+
+func (x *CancelTaskReminderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTaskReminderRequest.ProtoReflect.Descriptor instead.
+func (*CancelTaskReminderRequest) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CancelTaskReminderRequest) GetTaskId() int64 {
+	if x != nil {
+		return x.TaskId
+	}
+	return 0
+}
+
+type CancelTaskReminderResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTaskReminderResponse) Reset() {
+	*x = CancelTaskReminderResponse{}
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTaskReminderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTaskReminderResponse) ProtoMessage() {}
+
+func (x *CancelTaskReminderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTaskReminderResponse.ProtoReflect.Descriptor instead.
+func (*CancelTaskReminderResponse) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CancelTaskReminderResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CancelTaskReminderResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_notification_v1_notification_proto protoreflect.FileDescriptor
 
 const file_notification_v1_notification_proto_rawDesc = "" +
@@ -431,11 +528,17 @@ const file_notification_v1_notification_proto_rawDesc = "" +
 	"\bdue_date\x18\x05 \x01(\tR\adueDate\"R\n" +
 	"\x1cScheduleTaskReminderResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xf4\x02\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"4\n" +
+	"\x19CancelTaskReminderRequest\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\x03R\x06taskId\"P\n" +
+	"\x1aCancelTaskReminderResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xe3\x03\n" +
 	"\x13NotificationService\x12v\n" +
 	"\x15SendVerificationEmail\x12-.notification.v1.SendVerificationEmailRequest\x1a..notification.v1.SendVerificationEmailResponse\x12p\n" +
 	"\x13SendInvitationEmail\x12+.notification.v1.SendInvitationEmailRequest\x1a,.notification.v1.SendInvitationEmailResponse\x12s\n" +
-	"\x14ScheduleTaskReminder\x12,.notification.v1.ScheduleTaskReminderRequest\x1a-.notification.v1.ScheduleTaskReminderResponseB/Z-go-notification-service/pb/notification/v1;v1b\x06proto3"
+	"\x14ScheduleTaskReminder\x12,.notification.v1.ScheduleTaskReminderRequest\x1a-.notification.v1.ScheduleTaskReminderResponse\x12m\n" +
+	"\x12CancelTaskReminder\x12*.notification.v1.CancelTaskReminderRequest\x1a+.notification.v1.CancelTaskReminderResponseB/Z-go-notification-service/pb/notification/v1;v1b\x06proto3"
 
 var (
 	file_notification_v1_notification_proto_rawDescOnce sync.Once
@@ -449,7 +552,7 @@ func file_notification_v1_notification_proto_rawDescGZIP() []byte {
 	return file_notification_v1_notification_proto_rawDescData
 }
 
-var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_notification_v1_notification_proto_goTypes = []any{
 	(*SendVerificationEmailRequest)(nil),  // 0: notification.v1.SendVerificationEmailRequest
 	(*SendVerificationEmailResponse)(nil), // 1: notification.v1.SendVerificationEmailResponse
@@ -457,16 +560,20 @@ var file_notification_v1_notification_proto_goTypes = []any{
 	(*SendInvitationEmailResponse)(nil),   // 3: notification.v1.SendInvitationEmailResponse
 	(*ScheduleTaskReminderRequest)(nil),   // 4: notification.v1.ScheduleTaskReminderRequest
 	(*ScheduleTaskReminderResponse)(nil),  // 5: notification.v1.ScheduleTaskReminderResponse
+	(*CancelTaskReminderRequest)(nil),     // 6: notification.v1.CancelTaskReminderRequest
+	(*CancelTaskReminderResponse)(nil),    // 7: notification.v1.CancelTaskReminderResponse
 }
 var file_notification_v1_notification_proto_depIdxs = []int32{
 	0, // 0: notification.v1.NotificationService.SendVerificationEmail:input_type -> notification.v1.SendVerificationEmailRequest
 	2, // 1: notification.v1.NotificationService.SendInvitationEmail:input_type -> notification.v1.SendInvitationEmailRequest
 	4, // 2: notification.v1.NotificationService.ScheduleTaskReminder:input_type -> notification.v1.ScheduleTaskReminderRequest
-	1, // 3: notification.v1.NotificationService.SendVerificationEmail:output_type -> notification.v1.SendVerificationEmailResponse
-	3, // 4: notification.v1.NotificationService.SendInvitationEmail:output_type -> notification.v1.SendInvitationEmailResponse
-	5, // 5: notification.v1.NotificationService.ScheduleTaskReminder:output_type -> notification.v1.ScheduleTaskReminderResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	6, // 3: notification.v1.NotificationService.CancelTaskReminder:input_type -> notification.v1.CancelTaskReminderRequest
+	1, // 4: notification.v1.NotificationService.SendVerificationEmail:output_type -> notification.v1.SendVerificationEmailResponse
+	3, // 5: notification.v1.NotificationService.SendInvitationEmail:output_type -> notification.v1.SendInvitationEmailResponse
+	5, // 6: notification.v1.NotificationService.ScheduleTaskReminder:output_type -> notification.v1.ScheduleTaskReminderResponse
+	7, // 7: notification.v1.NotificationService.CancelTaskReminder:output_type -> notification.v1.CancelTaskReminderResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -483,7 +590,7 @@ func file_notification_v1_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notification_v1_notification_proto_rawDesc), len(file_notification_v1_notification_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

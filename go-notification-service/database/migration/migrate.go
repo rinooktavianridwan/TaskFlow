@@ -20,7 +20,7 @@ func RunMigration(db *sql.DB) {
 	// Gunakan prefix "file://"
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://database/migration/sql",
-		"mysql", 
+		"mysql",
 		driver,
 	)
 	if err != nil {

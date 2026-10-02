@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use App\Jobs\SyncTaskReminderJob;
 
 class TaskService
 {
@@ -52,6 +53,10 @@ class TaskService
             ]);
 
             $this->logActivity($task, $creator, TaskActivityAction::Created, 'Task created.');
+
+            if ($task->due_date !== null && $task->assigned_to !== null) {
+                SyncTaskReminderJob::dispatch($task->id)->afterCommit();
+            }
 
             return $task->load('assignee');
         });
@@ -109,13 +114,29 @@ class TaskService
                 $this->logActivity($task, $actor, TaskActivityAction::Updated, 'Task details updated.');
             }
 
+            if ($task->wasChanged(['title', 'due_date', 'assigned_to', 'status'])) {
+                SyncTaskReminderJob::dispatch($task->id)->afterCommit();
+            }
+
             return $task;
         });
     }
 
+    /**
+     * @throws Throwable
+     */
     public function delete(Task $task): bool
     {
-        return $task->delete();
+        return DB::transaction(function () use ($task) {
+            $taskId  = $task->id;
+            $deleted = $task->delete();
+
+            if ($deleted && $task->due_date !== null && $task->assigned_to !== null) {
+                SyncTaskReminderJob::dispatch($taskId)->afterCommit();
+            }
+
+            return $deleted;
+        });
     }
 
     /**
@@ -126,7 +147,7 @@ class TaskService
      */
     private function ensureCanUpdate(Project $project, Task $task, User $actor, array $data): void
     {
-        if (! $project->hasMember($actor)) {
+        if (!$project->hasMember($actor)) {
             throw new AuthorizationException('You are not a member of this project.');
         }
 
@@ -137,7 +158,7 @@ class TaskService
         $isAssignedToActor      = $task->assigned_to === $actor->id;
         $onlyStatusWasSubmitted = array_keys($data) === ['status'];
 
-        if (! $isAssignedToActor || ! $onlyStatusWasSubmitted) {
+        if (!$isAssignedToActor || !$onlyStatusWasSubmitted) {
             throw new AuthorizationException('You may only update the status of your assigned task.');
         }
     }
@@ -153,7 +174,7 @@ class TaskService
             ->where('user_id', $assigneeId)
             ->exists();
 
-        if (! $isProjectMember) {
+        if (!$isProjectMember) {
             throw ValidationException::withMessages([
                 'assigned_to' => ['The assignee must be a member of this project.'],
             ]);

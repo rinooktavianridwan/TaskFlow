@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\ProjectUser;
 use App\Models\User;
 use App\Enums\TaskActivityAction;
+use App\Jobs\SyncTaskReminderJob;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -84,6 +85,10 @@ class MemberService
                     'action'      => TaskActivityAction::Assigned->value,
                     'description' => $description,
                 ]);
+
+                if ($task->due_date !== null) {
+                    SyncTaskReminderJob::dispatch($task->id)->afterCommit();
+                }
             }
 
             return $membership->delete();

@@ -30,15 +30,22 @@ func main() {
 	// =========================================================================
 	// DATABASE INITIALIZATION & MIGRATION
 	// =========================================================================
-	
+
 	dbUser := os.Getenv("DB_USERNAME")
 	dbPass := os.Getenv("DB_PASSWORD")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbName := os.Getenv("DB_DATABASE")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbUser, dbPass, dbHost, dbPort, dbName)
-	
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=UTC",
+		dbUser,
+		dbPass,
+		dbHost,
+		dbPort,
+		dbName,
+	)
+
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("[Database] Gagal membuka koneksi awal: %v", err)
@@ -55,7 +62,7 @@ func main() {
 	// =========================================================================
 	// GRPC SERVER SETUP
 	// =========================================================================
-	
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("[gRPC] Gagal mendengarkan pada port 50051: %v", err)
@@ -63,7 +70,8 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	notification.InitModule(grpcServer, db)
+	stopReminderWorker := notification.InitModule(grpcServer, db)
+	defer stopReminderWorker()
 
 	// Health Check microservice
 	healthServer := health.NewServer()
@@ -76,7 +84,7 @@ func main() {
 	// =========================================================================
 	// START SERVER
 	// =========================================================================
-	
+
 	log.Println("[gRPC] go-notification-service berjalan di port :50051")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("[gRPC] Server berhenti secara tiba-tiba: %v", err)

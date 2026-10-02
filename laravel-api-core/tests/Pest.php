@@ -8,13 +8,20 @@ use App\Models\ProjectUser;
 use App\Models\User;
 use App\Enums\TaskStatus;
 use App\Models\Task;
+use App\Models\TaskActivity;
+use App\Enums\TaskActivityAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Queue;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+pest()->beforeEach(function () {
+    Queue::fake();
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -68,5 +75,15 @@ function createTask(Project $project, array $attributes = []): Task
         'assigned_to' => null,
         'status'      => TaskStatus::Todo->value,
         'due_date'    => null,
+    ], $attributes));
+}
+
+/** Buat catatan aktivitas pada task. $user boleh null (aktivitas tanpa user). */
+function createTaskActivity(Task $task, ?User $user, array $attributes = []): TaskActivity
+{
+    return $task->taskActivities()->create(array_merge([
+        'user_id'     => $user?->id,
+        'action'      => TaskActivityAction::Updated->value,
+        'description' => 'Task details updated.',
     ], $attributes));
 }
