@@ -6,6 +6,7 @@ import { VerifyRegistrationPage } from '@/features/auth/pages/VerifyRegistration
 import { GuestOnly, RequireAuth } from '@/features/auth/route-guards'
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage'
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage'
+import { ProjectTasksPage } from '@/features/tasks/pages/ProjectTasksPage'
 import { AppLayout } from '@/layouts/AppLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 
@@ -31,7 +32,14 @@ export const router = createBrowserRouter([
                 children: [
                     { index: true, element: <Navigate to="/projects" replace /> },
                     { path: '/projects', element: <ProjectsPage /> },
-                    { path: '/projects/:projectId', element: <ProjectDetailPage /> },
+                    {
+                        path: '/projects/:projectId',
+                        element: <ProjectDetailPage />,
+                        children: [
+                            { index: true, element: <Navigate to="tasks" replace /> },
+                            { path: 'tasks', element: <ProjectTasksPage /> },
+                        ],
+                    },
                 ],
             },
         ],

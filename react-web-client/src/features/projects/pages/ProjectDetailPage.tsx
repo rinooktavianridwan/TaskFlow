@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { ErrorState, LoadingState } from '@/components/feedback/states'
+import { TabNav } from '@/components/navigation/TabNav'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatDate } from '@/lib/dates'
@@ -9,6 +10,9 @@ import { ProjectFormModal } from '../components/ProjectFormModal'
 import { RoleBadge } from '../components/RoleBadge'
 import { canManageProject } from '../permissions'
 import { useDeleteProject, useProject } from '../queries'
+
+// Tab Members dan Invitations ditambahkan saat fiturnya dibangun.
+const tabs = [{ to: 'tasks', label: 'Tasks' }]
 
 export function ProjectDetailPage() {
     const { projectId } = useParams()
@@ -81,6 +85,13 @@ export function ProjectDetailPage() {
                         </Button>
                     </div>
                 )}
+            </div>
+
+            <div className="mt-6">
+                <TabNav tabs={tabs} />
+            </div>
+            <div className="mt-6">
+                <Outlet />
             </div>
 
             <ProjectFormModal open={editing} onClose={() => setEditing(false)} project={project} />

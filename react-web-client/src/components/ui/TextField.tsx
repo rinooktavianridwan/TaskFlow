@@ -2,17 +2,21 @@ import { useId, type ComponentProps, type ReactNode } from 'react'
 
 type TextFieldProps = ComponentProps<'input'> & {
     label: string
+    showLabel?: boolean
     icon?: ReactNode
     error?: string
 }
 
-export function TextField({ label, icon, error, className = '', ...props }: TextFieldProps) {
+export function TextField({ label, showLabel = false, icon, error, className = '', ...props }: TextFieldProps) {
     const id = useId()
     const errorId = `${id}-error`
 
     return (
         <div>
-            <label htmlFor={id} className="sr-only">
+            <label
+                htmlFor={id}
+                className={showLabel ? 'mb-1 ml-2 block text-sm font-medium text-gray-700' : 'sr-only'}
+            >
                 {label}
             </label>
             <div
