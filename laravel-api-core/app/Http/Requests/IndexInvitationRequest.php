@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\InvitationStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class IndexInvitationRequest extends FormRequest
 {
@@ -19,6 +21,7 @@ class IndexInvitationRequest extends FormRequest
     {
         return [
             'per_page' => 'nullable|integer|min:1|max:100',
+            'status'   => ['nullable', Rule::enum(InvitationStatus::class)],
         ];
     }
 }

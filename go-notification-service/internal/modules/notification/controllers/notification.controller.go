@@ -21,10 +21,7 @@ func NewNotificationController(emailService contract.Service) *NotificationContr
 	}
 }
 
-func (c *NotificationController) SendVerificationEmail(
-	ctx context.Context,
-	req *pb.SendVerificationEmailRequest,
-) (*pb.SendVerificationEmailResponse, error) {
+func (c *NotificationController) SendVerificationEmail(ctx context.Context, req *pb.SendVerificationEmailRequest) (*pb.SendVerificationEmailResponse, error) {
 	subject := "Kode Verifikasi TaskFlow Kamu"
 	body := fmt.Sprintf(
 		"Halo %s,\n\nKode OTP kamu: %s\nBerlaku 10 menit.",
@@ -32,12 +29,12 @@ func (c *NotificationController) SendVerificationEmail(
 		req.GetToken(),
 	)
 
-	if err := c.emailService.SendEmail(
-		req.GetEmail(),
-		values.NotificationTypeVerification,
-		subject,
-		body,
-	); err != nil {
+	if err := c.emailService.SendEmail(ctx, contract.Email{
+		To:      req.GetEmail(),
+		Type:    values.NotificationTypeVerification,
+		Subject: subject,
+		Body:    body,
+	}); err != nil {
 		log.Printf("gagal kirim email verifikasi ke %s: %v", req.GetEmail(), err)
 
 		return &pb.SendVerificationEmailResponse{
@@ -52,10 +49,7 @@ func (c *NotificationController) SendVerificationEmail(
 	}, nil
 }
 
-func (c *NotificationController) SendInvitationEmail(
-	ctx context.Context,
-	req *pb.SendInvitationEmailRequest,
-) (*pb.SendInvitationEmailResponse, error) {
+func (c *NotificationController) SendInvitationEmail(ctx context.Context, req *pb.SendInvitationEmailRequest) (*pb.SendInvitationEmailResponse, error) {
 	subject := fmt.Sprintf(
 		"Undangan bergabung ke project %s di TaskFlow",
 		req.GetProjectName(),
@@ -68,12 +62,12 @@ func (c *NotificationController) SendInvitationEmail(
 		req.GetToken(),
 	)
 
-	if err := c.emailService.SendEmail(
-		req.GetTargetEmail(),
-		values.NotificationTypeInvitation,
-		subject,
-		body,
-	); err != nil {
+	if err := c.emailService.SendEmail(ctx, contract.Email{
+		To:      req.GetTargetEmail(),
+		Type:    values.NotificationTypeInvitation,
+		Subject: subject,
+		Body:    body,
+	}); err != nil {
 		log.Printf("gagal kirim undangan ke %s: %v", req.GetTargetEmail(), err)
 
 		return &pb.SendInvitationEmailResponse{
@@ -88,18 +82,14 @@ func (c *NotificationController) SendInvitationEmail(
 	}, nil
 }
 
-func (c *NotificationController) ScheduleTaskReminder(
-	ctx context.Context,
-	req *pb.ScheduleTaskReminderRequest,
-) (*pb.ScheduleTaskReminderResponse, error) {
-	if err := c.emailService.ScheduleTaskReminder(
-		ctx,
-		req.GetTaskId(),
-		req.GetTaskTitle(),
-		req.GetProjectName(),
-		req.GetAssigneeEmail(),
-		req.GetDueDate(),
-	); err != nil {
+func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {
+	if err := c.emailService.ScheduleTaskReminder(ctx, contract.ScheduleTaskReminderInput{
+		TaskID:        req.GetTaskId(),
+		TaskTitle:     req.GetTaskTitle(),
+		ProjectName:   req.GetProjectName(),
+		AssigneeEmail: req.GetAssigneeEmail(),
+		DueDate:       req.GetDueDate(),
+	}); err != nil {
 		log.Printf(
 			"gagal menjadwalkan reminder task %d: %v",
 			req.GetTaskId(),
@@ -118,10 +108,7 @@ func (c *NotificationController) ScheduleTaskReminder(
 	}, nil
 }
 
-func (c *NotificationController) CancelTaskReminder(
-	ctx context.Context,
-	req *pb.CancelTaskReminderRequest,
-) (*pb.CancelTaskReminderResponse, error) {
+func (c *NotificationController) CancelTaskReminder(ctx context.Context, req *pb.CancelTaskReminderRequest) (*pb.CancelTaskReminderResponse, error) {
 	if err := c.emailService.CancelTaskReminder(ctx, req.GetTaskId()); err != nil {
 		log.Printf(
 			"gagal membatalkan reminder task %d: %v",

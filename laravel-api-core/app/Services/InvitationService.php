@@ -17,10 +17,13 @@ use App\Models\User;
 
 class InvitationService
 {
-    public function index(Project $project): Builder
+    public function index(Project $project, array $filter): Builder
     {
         return ProjectInvitation::query()
             ->where('project_id', $project->id)
+            ->when($filter['status'] ?? null, function (Builder $query, string $status) {
+                $query->where('status', $status);
+            })
             ->orderByDesc('id');
     }
 
@@ -70,11 +73,26 @@ class InvitationService
         });
     }
 
-    public function delete(Project $project, ProjectInvitation $invitation): bool
+    /**
+     * @throws Throwable
+     */
+    public function delete(Project $project, ProjectInvitation $invitation): void
     {
-        $projectInvitation = $project->invitations()->findOrFail($invitation->id);
+        DB::transaction(function () use ($project, $invitation) {
+            // Dikunci agar tidak berbalapan dengan accept/decline yang juga mengunci baris ini.
+            $lockedInvitation = $project->invitations()
+                ->whereKey($invitation->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        return $projectInvitation->delete();
+            if ($lockedInvitation->status !== InvitationStatus::Pending->value) {
+                throw ValidationException::withMessages([
+                    'invitation' => ['Only pending invitations can be revoked.'],
+                ]);
+            }
+
+            $lockedInvitation->delete();
+        });
     }
 
     /**

@@ -19,12 +19,25 @@ func NewNotificationRepository(db *sql.DB) contract.Repository {
 	return &notificationRepositoryImpl{db: db}
 }
 
-func (r *notificationRepositoryImpl) SaveNotificationLog(
-	email string,
-	notificationType values.NotificationType,
-	status values.DeliveryStatus,
-	errorMessage string,
-) error {
+func (r *notificationRepositoryImpl) withTx(ctx context.Context, fn func(tx *sql.Tx) error) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (r *notificationRepositoryImpl) SaveNotificationLog(entry contract.NotificationLog) error {
 	const query = `
 		INSERT INTO notification_logs (
 			recipient_email,
@@ -37,10 +50,10 @@ func (r *notificationRepositoryImpl) SaveNotificationLog(
 
 	_, err := r.db.Exec(
 		query,
-		email,
-		string(notificationType),
-		string(status),
-		errorMessage,
+		entry.RecipientEmail,
+		string(entry.NotificationType),
+		string(entry.Status),
+		entry.ErrorMessage,
 	)
 	if err != nil {
 		return fmt.Errorf("save notification log: %w", err)
@@ -49,23 +62,25 @@ func (r *notificationRepositoryImpl) SaveNotificationLog(
 	return nil
 }
 
-func (r *notificationRepositoryImpl) UpsertTaskReminder(
-	ctx context.Context,
-	reminder contract.TaskReminder,
-) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (r *notificationRepositoryImpl) UpsertTaskReminder(ctx context.Context, reminder contract.TaskReminder) error {
+	err := r.withTx(ctx, func(tx *sql.Tx) error {
+		return upsertTaskReminder(ctx, tx, reminder)
+	})
 	if err != nil {
-		return fmt.Errorf("begin upsert task reminder %d: %w", reminder.TaskID, err)
+		return fmt.Errorf("upsert task reminder %d: %w", reminder.TaskID, err)
 	}
-	defer tx.Rollback()
 
+	return nil
+}
+
+func upsertTaskReminder(ctx context.Context, tx *sql.Tx, reminder contract.TaskReminder) error {
 	var (
 		currentStatus string
 		currentDueAt  time.Time
 		currentEmail  string
 	)
 
-	err = tx.QueryRowContext(
+	err := tx.QueryRowContext(
 		ctx,
 		`SELECT status, due_at, recipient_email
 		 FROM task_reminders
@@ -94,10 +109,8 @@ func (r *notificationRepositoryImpl) UpsertTaskReminder(
 		)
 
 	case err != nil:
-		return fmt.Errorf("lock task reminder %d: %w", reminder.TaskID, err)
+		return fmt.Errorf("lock task reminder: %w", err)
 
-	// Jadwal dan penerima sama dengan yang sudah terkirim (atau sedang dikirim):
-	// jangan dikirim ulang, cukup perbarui teksnya.
 	case (currentStatus == string(values.TaskReminderStatusSent) ||
 		currentStatus == string(values.TaskReminderStatusProcessing)) &&
 		currentDueAt.Equal(reminder.DueAt) &&
@@ -137,21 +150,10 @@ func (r *notificationRepositoryImpl) UpsertTaskReminder(
 		)
 	}
 
-	if err != nil {
-		return fmt.Errorf("upsert task reminder %d: %w", reminder.TaskID, err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit upsert task reminder %d: %w", reminder.TaskID, err)
-	}
-
-	return nil
+	return err
 }
 
-func (r *notificationRepositoryImpl) CancelTaskReminder(
-	ctx context.Context,
-	taskID int64,
-) error {
+func (r *notificationRepositoryImpl) CancelTaskReminder(ctx context.Context, taskID int64) error {
 	const query = `
 		UPDATE task_reminders
 		SET status = ?,
@@ -175,22 +177,25 @@ func (r *notificationRepositoryImpl) CancelTaskReminder(
 	return nil
 }
 
-func (r *notificationRepositoryImpl) ClaimDueTaskReminders(
-	ctx context.Context,
-	now time.Time,
-	staleBefore time.Time,
-	limit int,
-) ([]contract.TaskReminder, error) {
-	if limit < 1 {
+func (r *notificationRepositoryImpl) ClaimDueTaskReminders(ctx context.Context, input contract.ClaimDueTaskRemindersInput) ([]contract.TaskReminder, error) {
+	if input.Limit < 1 {
 		return nil, fmt.Errorf("claim limit must be positive")
 	}
 
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("begin claim transaction: %w", err)
-	}
-	defer tx.Rollback()
+	var reminders []contract.TaskReminder
 
+	err := r.withTx(ctx, func(tx *sql.Tx) (err error) {
+		reminders, err = claimDueTaskReminders(ctx, tx, input)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return reminders, nil
+}
+
+func claimDueTaskReminders(ctx context.Context, tx *sql.Tx, input contract.ClaimDueTaskRemindersInput) ([]contract.TaskReminder, error) {
 	const selectQuery = `
 		SELECT
 			task_id,
@@ -215,44 +220,18 @@ func (r *notificationRepositoryImpl) ClaimDueTaskReminders(
 		ctx,
 		selectQuery,
 		string(values.TaskReminderStatusScheduled),
-		now.UTC(),
+		input.Now.UTC(),
 		string(values.TaskReminderStatusProcessing),
-		staleBefore.UTC(),
-		limit,
+		input.StaleBefore.UTC(),
+		input.Limit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("select due task reminders: %w", err)
 	}
 
-	reminders := make([]contract.TaskReminder, 0, limit)
-
-	for rows.Next() {
-		var reminder contract.TaskReminder
-
-		if err := rows.Scan(
-			&reminder.TaskID,
-			&reminder.TaskTitle,
-			&reminder.ProjectName,
-			&reminder.RecipientEmail,
-			&reminder.DueAt,
-			&reminder.RemindAt,
-			&reminder.NextAttemptAt,
-			&reminder.AttemptCount,
-		); err != nil {
-			rows.Close()
-			return nil, fmt.Errorf("scan due task reminder: %w", err)
-		}
-
-		reminders = append(reminders, reminder)
-	}
-
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		return nil, fmt.Errorf("read due task reminders: %w", err)
-	}
-
-	if err := rows.Close(); err != nil {
-		return nil, fmt.Errorf("close due task reminder rows: %w", err)
+	reminders, err := scanTaskReminders(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	const claimQuery = `
@@ -268,7 +247,7 @@ func (r *notificationRepositoryImpl) ClaimDueTaskReminders(
 			ctx,
 			claimQuery,
 			string(values.TaskReminderStatusProcessing),
-			now.UTC(),
+			input.Now.UTC(),
 			reminders[i].TaskID,
 		); err != nil {
 			return nil, fmt.Errorf(
@@ -281,18 +260,41 @@ func (r *notificationRepositoryImpl) ClaimDueTaskReminders(
 		reminders[i].AttemptCount++
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("commit task reminder claims: %w", err)
+	return reminders, nil
+}
+
+func scanTaskReminders(rows *sql.Rows) ([]contract.TaskReminder, error) {
+	defer rows.Close()
+
+	var reminders []contract.TaskReminder
+
+	for rows.Next() {
+		var reminder contract.TaskReminder
+
+		if err := rows.Scan(
+			&reminder.TaskID,
+			&reminder.TaskTitle,
+			&reminder.ProjectName,
+			&reminder.RecipientEmail,
+			&reminder.DueAt,
+			&reminder.RemindAt,
+			&reminder.NextAttemptAt,
+			&reminder.AttemptCount,
+		); err != nil {
+			return nil, fmt.Errorf("scan task reminder: %w", err)
+		}
+
+		reminders = append(reminders, reminder)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("read task reminders: %w", err)
 	}
 
 	return reminders, nil
 }
 
-func (r *notificationRepositoryImpl) MarkTaskReminderSent(
-	ctx context.Context,
-	taskID int64,
-	sentAt time.Time,
-) error {
+func (r *notificationRepositoryImpl) MarkTaskReminderSent(ctx context.Context, taskID int64, sentAt time.Time) error {
 	const query = `
 		UPDATE task_reminders
 		SET status = ?,
@@ -326,13 +328,7 @@ func (r *notificationRepositoryImpl) MarkTaskReminderSent(
 	return nil
 }
 
-func (r *notificationRepositoryImpl) RetryTaskReminder(
-	ctx context.Context,
-	taskID int64,
-	lastError string,
-	nextAttemptAt time.Time,
-	maxAttempts int,
-) error {
+func (r *notificationRepositoryImpl) RetryTaskReminder(ctx context.Context, input contract.RetryTaskReminderInput) error {
 	const query = `
 		UPDATE task_reminders
 		SET status = CASE
@@ -349,16 +345,16 @@ func (r *notificationRepositoryImpl) RetryTaskReminder(
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		maxAttempts,
+		input.MaxAttempts,
 		string(values.TaskReminderStatusFailed),
 		string(values.TaskReminderStatusScheduled),
-		nextAttemptAt.UTC(),
-		lastError,
-		taskID,
+		input.NextAttemptAt.UTC(),
+		input.LastError,
+		input.TaskID,
 		string(values.TaskReminderStatusProcessing),
 	)
 	if err != nil {
-		return fmt.Errorf("retry task reminder %d: %w", taskID, err)
+		return fmt.Errorf("retry task reminder %d: %w", input.TaskID, err)
 	}
 
 	return nil

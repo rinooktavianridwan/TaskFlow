@@ -198,6 +198,42 @@ test('owner melihat undangan project ini saja, terbaru di atas, tanpa token', fu
         ]);
 });
 
+test('owner bisa memfilter undangan berdasarkan status', function () {
+    $owner   = User::factory()->create();
+    $project = createProject($owner);
+
+    $pending = createInvitation($project, 'a@example.com');
+    createInvitation($project, 'b@example.com', ['status' => 'accepted']);
+    createInvitation($project, 'c@example.com', ['status' => 'declined']);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/invitations?status=pending")
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonPath('data.items.0.id', $pending->id)
+        ->assertJsonPath('data.meta.total', 1);
+});
+
+test('filter status undangan harus berupa status yang dikenal', function () {
+    $owner   = User::factory()->create();
+    $project = createProject($owner);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/invitations?status=revoked")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('status');
+});
+
+test('per_page di luar batas ditolak pada daftar undangan', function (int $perPage) {
+    $owner   = User::factory()->create();
+    $project = createProject($owner);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/invitations?per_page={$perPage}")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('per_page');
+})->with([0, 101]);
+
 // ---------------------------------------------------------------- DESTROY
 
 test('owner bisa menghapus undangan lewat id', function () {
@@ -224,4 +260,47 @@ test('owner tidak bisa menghapus undangan milik project lain', function () {
         ->assertNotFound();
 
     $this->assertModelExists($otherInvitation);
+});
+
+test('undangan pending yang sudah kedaluwarsa tetap bisa dihapus', function () {
+    $owner      = User::factory()->create();
+    $project    = createProject($owner);
+    $invitation = createInvitation($project, 'lama@example.com', ['expires_at' => now()->subDay()]);
+
+    $this->actingAs($owner)
+        ->deleteJson("/api/projects/{$project->id}/invitations/{$invitation->id}")
+        ->assertNoContent();
+
+    $this->assertModelMissing($invitation);
+});
+
+test('undangan yang sudah diterima atau ditolak tidak bisa dihapus', function (string $status) {
+    $owner      = User::factory()->create();
+    $project    = createProject($owner);
+    $invitation = createInvitation($project, 'selesai@example.com', ['status' => $status]);
+
+    $this->actingAs($owner)
+        ->deleteJson("/api/projects/{$project->id}/invitations/{$invitation->id}")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('invitation');
+
+    $this->assertModelExists($invitation);
+})->with(['accepted', 'declined']);
+
+test('menghapus undangan pending membuat tokennya tidak bisa dipakai lagi', function () {
+    $owner      = User::factory()->create();
+    $invitee    = User::factory()->create(['email' => 'tamu@example.com']);
+    $project    = createProject($owner);
+    $invitation = createInvitation($project, 'tamu@example.com');
+    $token      = $invitation->token;
+
+    $this->actingAs($owner)
+        ->deleteJson("/api/projects/{$project->id}/invitations/{$invitation->id}")
+        ->assertNoContent();
+
+    $this->actingAs($invitee)
+        ->postJson("/api/invitations/{$token}/accept")
+        ->assertNotFound();
+
+    expect($project->projectUsers()->where('user_id', $invitee->id)->exists())->toBeFalse();
 });

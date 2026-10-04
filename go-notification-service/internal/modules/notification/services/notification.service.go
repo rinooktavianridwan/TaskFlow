@@ -2,15 +2,10 @@ package services
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net/smtp"
-	"os"
 	"strings"
 	"time"
-
-	"github.com/mailtrap/mailtrap-go"
 
 	"go-notification-service/internal/modules/notification/contract"
 	"go-notification-service/internal/modules/notification/values"
@@ -26,89 +21,49 @@ const (
 )
 
 type notificationServiceImpl struct {
-	repo contract.Repository
+	repo   contract.Repository
+	mailer contract.Mailer
 }
 
-func NewNotificationService(repo contract.Repository) contract.Service {
-	return &notificationServiceImpl{repo: repo}
+func NewNotificationService(repo contract.Repository, mailer contract.Mailer) contract.Service {
+	return &notificationServiceImpl{repo: repo, mailer: mailer}
 }
 
-func (s *notificationServiceImpl) SendEmail(
-	to string,
-	notificationType values.NotificationType,
-	subject string,
-	body string,
-) error {
-	to = strings.TrimSpace(to)
+func (s *notificationServiceImpl) SendEmail(ctx context.Context, email contract.Email) error {
+	email.To = strings.TrimSpace(email.To)
 
-	if to == "" {
+	if email.To == "" {
 		return fmt.Errorf("recipient email is required")
 	}
 
-	provider := os.Getenv("MAIL_PROVIDER")
+	status, err := s.mailer.Send(ctx, email)
 
-	var err error
-
-	switch provider {
-	case "smtp":
-		err = sendSmtpMail(to, subject, body)
-	case "mailtrap":
-		err = sendMailtrapMail(to, subject, body)
-	default:
-		log.Printf(
-			"[Mail fallback/log] To: %s | Type: %s | Subject: %s | Body: %s",
-			to,
-			notificationType,
-			subject,
-			body,
-		)
-
-		s.saveNotificationLog(
-			to,
-			notificationType,
-			values.DeliveryStatusSuccessFallback,
-			"",
-		)
-
-		return nil
+	entry := contract.NotificationLog{
+		RecipientEmail:   email.To,
+		NotificationType: email.Type,
+		Status:           status,
 	}
 
 	if err != nil {
-		s.saveNotificationLog(
-			to,
-			notificationType,
-			values.DeliveryStatusFailed,
-			err.Error(),
-		)
-
-		return err
+		entry.Status = values.DeliveryStatusFailed
+		entry.ErrorMessage = err.Error()
 	}
 
-	s.saveNotificationLog(
-		to,
-		notificationType,
-		values.DeliveryStatusSuccess,
-		"",
-	)
+	s.saveNotificationLog(entry)
 
-	return nil
+	return err
 }
 
-func (s *notificationServiceImpl) ScheduleTaskReminder(
-	ctx context.Context,
-	taskID int64,
-	taskTitle string,
-	projectName string,
-	assigneeEmail string,
-	dueDate string,
-) error {
+func (s *notificationServiceImpl) ScheduleTaskReminder(ctx context.Context, input contract.ScheduleTaskReminderInput) error {
+	taskID := input.TaskID
+	taskTitle := strings.TrimSpace(input.TaskTitle)
+	projectName := strings.TrimSpace(input.ProjectName)
+	assigneeEmail := strings.TrimSpace(input.AssigneeEmail)
+	dueDate := input.DueDate
+
 	if taskID < 1 {
 		return fmt.Errorf("task_id must be greater than zero")
 	}
-
-	taskTitle = strings.TrimSpace(taskTitle)
-	projectName = strings.TrimSpace(projectName)
-	assigneeEmail = strings.TrimSpace(assigneeEmail)
 
 	if taskTitle == "" {
 		return fmt.Errorf("task_title is required")
@@ -164,10 +119,7 @@ func (s *notificationServiceImpl) ScheduleTaskReminder(
 	return nil
 }
 
-func (s *notificationServiceImpl) CancelTaskReminder(
-	ctx context.Context,
-	taskID int64,
-) error {
+func (s *notificationServiceImpl) CancelTaskReminder(ctx context.Context, taskID int64) error {
 	if taskID < 1 {
 		return fmt.Errorf("task_id must be greater than zero")
 	}
@@ -205,12 +157,11 @@ func (s *notificationServiceImpl) RunTaskReminderWorker(ctx context.Context) {
 func (s *notificationServiceImpl) processDueTaskReminders(ctx context.Context) error {
 	now := time.Now().UTC()
 
-	reminders, err := s.repo.ClaimDueTaskReminders(
-		ctx,
-		now,
-		now.Add(-reminderStaleAfter),
-		reminderBatchSize,
-	)
+	reminders, err := s.repo.ClaimDueTaskReminders(ctx, contract.ClaimDueTaskRemindersInput{
+		Now:         now,
+		StaleBefore: now.Add(-reminderStaleAfter),
+		Limit:       reminderBatchSize,
+	})
 	if err != nil {
 		return fmt.Errorf("claim due task reminders: %w", err)
 	}
@@ -237,23 +188,22 @@ func (s *notificationServiceImpl) processDueTaskReminders(ctx context.Context) e
 			reminder.DueAt.UTC().Format("02 Jan 2006 15:04"),
 		)
 
-		if err := s.SendEmail(
-			reminder.RecipientEmail,
-			values.NotificationTypeTaskReminder,
-			subject,
-			body,
-		); err != nil {
+		if err := s.SendEmail(ctx, contract.Email{
+			To:      reminder.RecipientEmail,
+			Type:    values.NotificationTypeTaskReminder,
+			Subject: subject,
+			Body:    body,
+		}); err != nil {
 			retryAt := time.Now().UTC().Add(
 				time.Duration(reminder.AttemptCount) * reminderRetryDelay,
 			)
 
-			if retryErr := s.repo.RetryTaskReminder(
-				ctx,
-				reminder.TaskID,
-				err.Error(),
-				retryAt,
-				reminderMaxAttempts,
-			); retryErr != nil {
+			if retryErr := s.repo.RetryTaskReminder(ctx, contract.RetryTaskReminderInput{
+				TaskID:        reminder.TaskID,
+				LastError:     err.Error(),
+				NextAttemptAt: retryAt,
+				MaxAttempts:   reminderMaxAttempts,
+			}); retryErr != nil {
 				log.Printf(
 					"[Reminder worker] Could not record failed attempt for task %d: %v",
 					reminder.TaskID,
@@ -280,104 +230,13 @@ func (s *notificationServiceImpl) processDueTaskReminders(ctx context.Context) e
 	return nil
 }
 
-func (s *notificationServiceImpl) saveNotificationLog(
-	email string,
-	notificationType values.NotificationType,
-	status values.DeliveryStatus,
-	errorMessage string,
-) {
-	if err := s.repo.SaveNotificationLog(
-		email,
-		notificationType,
-		status,
-		errorMessage,
-	); err != nil {
+func (s *notificationServiceImpl) saveNotificationLog(entry contract.NotificationLog) {
+	if err := s.repo.SaveNotificationLog(entry); err != nil {
 		log.Printf(
 			"[Notification log] Could not save log for %s (%s): %v",
-			email,
-			notificationType,
+			entry.RecipientEmail,
+			entry.NotificationType,
 			err,
 		)
 	}
-}
-
-// ---------- Mailtrap (HTTP API) ----------
-
-func sendMailtrapMail(to, subject, body string) error {
-	client, err := mailtrap.NewClient(os.Getenv("MAILTRAP_API_TOKEN"))
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, _, err = client.Send(ctx, &mailtrap.SendRequest{
-		From:     mailtrap.Address{Email: os.Getenv("MAILTRAP_FROM_EMAIL"), Name: os.Getenv("MAILTRAP_FROM_NAME")},
-		To:       []mailtrap.Address{{Email: to}},
-		Subject:  subject,
-		Text:     body,
-		Category: "TaskFlow Notification",
-	})
-
-	return err
-}
-
-// ---------- SMTP dengan STARTTLS ----------
-
-func sendSmtpMail(to, subject, body string) error {
-	host := os.Getenv("SMTP_HOST")
-	port := os.Getenv("SMTP_PORT")
-	user := os.Getenv("SMTP_USERNAME")
-	pass := os.Getenv("SMTP_PASSWORD")
-	from := os.Getenv("SMTP_FROM")
-
-	addr := fmt.Sprintf("%s:%s", host, port)
-	auth := smtp.PlainAuth("", user, pass, host)
-		msg := fmt.Appendf(
-		nil,
-		"From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s",
-		from,
-		to,
-		subject,
-		body,
-	)
-
-	client, err := smtp.Dial(addr)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	if err := client.StartTLS(&tls.Config{ServerName: host}); err != nil {
-		return err
-	}
-
-	if err := client.Auth(auth); err != nil {
-		return err
-	}
-
-	if err := client.Mail(from); err != nil {
-		return err
-	}
-
-	if err := client.Rcpt(to); err != nil {
-		return err
-	}
-
-	writer, err := client.Data()
-	if err != nil {
-		return err
-	}
-
-	if _, err := writer.Write(msg); err != nil {
-		_ = writer.Close()
-		return err
-	}
-
-	if err := writer.Close(); err != nil {
-		return err
-	}
-
-	return client.Quit()
 }

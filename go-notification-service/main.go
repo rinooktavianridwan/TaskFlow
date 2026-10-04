@@ -70,7 +70,10 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	stopReminderWorker := notification.InitModule(grpcServer, db)
+	stopReminderWorker, err := notification.InitModule(grpcServer, db)
+	if err != nil {
+		log.Fatalf("[Notification] Gagal menginisialisasi modul: %v", err)
+	}
 	defer stopReminderWorker()
 
 	// Health Check microservice
