@@ -4,6 +4,8 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { RegisterPage } from '@/features/auth/pages/RegisterPage'
 import { VerifyRegistrationPage } from '@/features/auth/pages/VerifyRegistrationPage'
 import { GuestOnly, RequireAuth } from '@/features/auth/route-guards'
+import { ProjectInvitationsPage } from '@/features/invitations/pages/ProjectInvitationsPage'
+import { ProjectMembersPage } from '@/features/members/pages/ProjectMembersPage'
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage'
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage'
 import { ProjectTasksPage } from '@/features/tasks/pages/ProjectTasksPage'
@@ -39,6 +41,8 @@ export const router = createBrowserRouter([
                         children: [
                             { index: true, element: <Navigate to="tasks" replace /> },
                             { path: 'tasks', element: <ProjectTasksPage /> },
+                            { path: 'members', element: <ProjectMembersPage /> },
+                            { path: 'invitations', element: <ProjectInvitationsPage /> },
                         ],
                     },
                     { path: '/tasks/:taskId', element: <TaskDetailPage /> },

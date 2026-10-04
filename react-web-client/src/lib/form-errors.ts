@@ -4,7 +4,9 @@ import type { ApiErrorBody } from '@/types/api'
 
 export function getErrorMessage(error: unknown): string {
     if (isAxiosError<ApiErrorBody>(error)) {
-        return error.response?.data?.message ?? 'Unable to reach the server.'
+        const data = error.response?.data
+        const firstFieldError = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined
+        return firstFieldError ?? data?.message ?? 'Unable to reach the server.'
     }
     return 'Something went wrong. Please try again.'
 }
@@ -24,7 +26,6 @@ export function applyFieldErrors<T extends FieldValues>(
     }
     return true
 }
-
 
 export function getErrorStatus(error: unknown): number | undefined {
     return isAxiosError(error) ? error.response?.status : undefined

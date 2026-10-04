@@ -1,3 +1,4 @@
+import { PROJECT_ROLE_LABELS } from '../roles'
 import type { ProjectRole } from '../types'
 
 const styles: Record<ProjectRole, string> = {
@@ -6,18 +7,12 @@ const styles: Record<ProjectRole, string> = {
     viewer: 'bg-gray-100 text-gray-600',
 }
 
-const labels: Record<ProjectRole, string> = {
-    owner: 'Owner',
-    editor: 'Editor',
-    viewer: 'Viewer',
-}
-
 export function RoleBadge({ role }: { role?: ProjectRole | null }) {
     if (!role) return null
 
     return (
         <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[role]}`}>
-            {labels[role]}
+            {PROJECT_ROLE_LABELS[role]}
         </span>
     )
 }

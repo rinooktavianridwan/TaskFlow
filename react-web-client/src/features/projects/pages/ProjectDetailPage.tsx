@@ -11,9 +11,6 @@ import { RoleBadge } from '../components/RoleBadge'
 import { canManageProject } from '../permissions'
 import { useDeleteProject, useProject } from '../queries'
 
-// Tab Members dan Invitations ditambahkan saat fiturnya dibangun.
-const tabs = [{ to: 'tasks', label: 'Tasks' }]
-
 export function ProjectDetailPage() {
     const { projectId } = useParams()
     const id = Number(projectId)
@@ -39,6 +36,13 @@ export function ProjectDetailPage() {
         }
         return <ErrorState message={getErrorMessage(error)} onRetry={() => void refetch()} />
     }
+
+    const isOwner = canManageProject(project.role)
+    const tabs = [
+        { to: 'tasks', label: 'Tasks' },
+        { to: 'members', label: 'Members' },
+        ...(isOwner ? [{ to: 'invitations', label: 'Invitations' }] : []),
+    ]
 
     async function handleDelete() {
         setDeleteError(null)
@@ -75,7 +79,7 @@ export function ProjectDetailPage() {
                     </p>
                 </div>
 
-                {canManageProject(project.role) && (
+                {isOwner && (
                     <div className="flex gap-2">
                         <Button type="button" variant="secondary" fullWidth={false} onClick={() => setEditing(true)}>
                             Edit
