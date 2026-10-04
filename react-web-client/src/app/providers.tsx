@@ -16,7 +16,15 @@ function handleError(error: unknown) {
 const queryClient = new QueryClient({
     queryCache: new QueryCache({ onError: handleError }),
     mutationCache: new MutationCache({ onError: handleError }),
-    defaultOptions: { queries: { retry: 1 } },
+    defaultOptions: {
+        queries: {
+            retry: (failureCount, error) => {
+                const status = isAxiosError(error) ? error.response?.status : undefined
+                if (status !== undefined && status < 500) return false
+                return failureCount < 1
+            },
+        },
+    },
 })
 
 export function Providers({ children }: { children: ReactNode }) {

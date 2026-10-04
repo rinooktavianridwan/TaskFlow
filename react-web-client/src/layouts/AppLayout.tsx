@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { useAuth } from '@/features/auth/auth-context'
 
 export function AppLayout() {
@@ -7,7 +7,9 @@ export function AppLayout() {
     return (
         <div className="min-h-screen bg-gray-50">
             <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
-                <span className="text-lg font-bold text-blue-600">TaskFlow</span>
+                <Link to="/projects" className="text-lg font-bold text-blue-600">
+                    TaskFlow
+                </Link>
                 <div className="flex items-center gap-4 text-sm">
                     <span className="text-gray-600">{user?.name}</span>
                     <button
@@ -19,7 +21,7 @@ export function AppLayout() {
                     </button>
                 </div>
             </header>
-            <main className="p-6">
+            <main className="mx-auto w-full max-w-6xl p-6">
                 <Outlet />
             </main>
         </div>

@@ -24,3 +24,8 @@ export function applyFieldErrors<T extends FieldValues>(
     }
     return true
 }
+
+
+export function getErrorStatus(error: unknown): number | undefined {
+    return isAxiosError(error) ? error.response?.status : undefined
+}
