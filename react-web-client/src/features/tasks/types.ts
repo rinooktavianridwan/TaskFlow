@@ -26,9 +26,28 @@ export type TaskPayload = {
     due_date: string | null
 }
 
+// PATCH: semua field opsional, hanya yang dikirim yang diubah.
+export type UpdateTaskPayload = Partial<TaskPayload> & { status?: TaskStatus }
+
 export type ListTasksParams = {
     page?: number
     per_page?: number
     title?: string
     status?: TaskStatus
+}
+
+export type TaskActivityAction = 'created' | 'status_changed' | 'assigned' | 'updated'
+
+export type TaskActivity = {
+    id: number
+    task_id: number
+    action: TaskActivityAction
+    description: string
+    user: { id: number; name: string } | null
+    created_at: string
+}
+
+export type ListTaskActivitiesParams = {
+    page?: number
+    per_page?: number
 }

@@ -7,6 +7,7 @@ import { GuestOnly, RequireAuth } from '@/features/auth/route-guards'
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage'
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage'
 import { ProjectTasksPage } from '@/features/tasks/pages/ProjectTasksPage'
+import { TaskDetailPage } from '@/features/tasks/pages/TaskDetailPage'
 import { AppLayout } from '@/layouts/AppLayout'
 import { AuthLayout } from '@/layouts/AuthLayout'
 
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
                             { path: 'tasks', element: <ProjectTasksPage /> },
                         ],
                     },
+                    { path: '/tasks/:taskId', element: <TaskDetailPage /> },
                 ],
             },
         ],

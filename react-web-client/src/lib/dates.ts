@@ -13,3 +13,11 @@ export function formatDateTime(iso: string): string {
 export function isPast(iso: string): boolean {
     return new Date(iso).getTime() < Date.now()
 }
+
+// Nilai untuk <input type="datetime-local"> adalah waktu LOKAL tanpa zona ("2026-10-05T09:30").
+export function toDateTimeLocalValue(iso: string | null): string {
+    if (!iso) return ''
+    const date = new Date(iso)
+    const offsetMs = date.getTimezoneOffset() * 60_000
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
+}

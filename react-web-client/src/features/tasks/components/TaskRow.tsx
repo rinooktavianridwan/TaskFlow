@@ -1,14 +1,18 @@
-import { formatDateTime, isPast } from '@/lib/dates'
+import { Link } from 'react-router-dom'
 import type { Task } from '../types'
+import { DueDate } from './DueDate'
 import { StatusBadge } from './StatusBadge'
 
 export function TaskRow({ task }: { task: Task }) {
-    const overdue = task.due_date !== null && task.status !== 'done' && isPast(task.due_date)
-
     return (
-        <li className="rounded-2xl border border-gray-200 bg-white p-4">
+        <li className="relative rounded-2xl border border-gray-200 bg-white p-4 transition hover:border-blue-300 hover:shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-2">
-                <h3 className="min-w-0 font-semibold break-words text-gray-800">{task.title}</h3>
+                <h3 className="min-w-0 font-semibold break-words text-gray-800">
+                    {/* after:inset-0 meluaskan area klik link ke seluruh kartu. */}
+                    <Link to={`/tasks/${task.id}`} className="after:absolute after:inset-0">
+                        {task.title}
+                    </Link>
+                </h3>
                 <StatusBadge status={task.status} />
             </div>
 
@@ -18,12 +22,7 @@ export function TaskRow({ task }: { task: Task }) {
 
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                 <span>{task.assignee ? `Assigned to ${task.assignee.name}` : 'Unassigned'}</span>
-                {task.due_date && (
-                    <span className={overdue ? 'font-semibold text-red-600' : undefined}>
-                        Due {formatDateTime(task.due_date)}
-                        {overdue && ' (overdue)'}
-                    </span>
-                )}
+                <DueDate task={task} />
             </div>
         </li>
     )
