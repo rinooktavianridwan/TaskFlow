@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '@/components/feedback/states'
 import { Button } from '@/components/ui/Button'
-import { SearchIcon } from '@/components/ui/icons'
 import { Pagination } from '@/components/ui/Pagination'
-import { TextField } from '@/components/ui/TextField'
+import { SearchField } from '@/components/ui/SearchField'
 import { canManageTasks } from '@/features/projects/permissions'
 import { useProject } from '@/features/projects/queries'
 import { getErrorMessage } from '@/lib/form-errors'
-import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { parseOption, parsePage, toPageParam, useUrlParams } from '@/lib/use-url-params'
 import { TaskFormModal } from '../components/TaskFormModal'
 import { TaskRow } from '../components/TaskRow'
 import { useProjectTasks } from '../queries'
@@ -25,19 +24,20 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
 export function ProjectTasksPage() {
     const { projectId } = useParams()
     const id = Number(projectId)
-    // Layout induk sudah memuat project, jadi ini langsung terisi dari cache.
+    // Layout induk sudah memuat project, langsung terisi dari cache.
     const { data: project } = useProject(id)
     const canManage = canManageTasks(project?.role)
 
-    const [search, setSearch] = useState('')
-    const [status, setStatus] = useState<StatusFilter>('all')
-    const [page, setPage] = useState(1)
+    const [params, updateParams] = useUrlParams()
     const [creating, setCreating] = useState(false)
-    const debouncedSearch = useDebouncedValue(search.trim(), 300)
+    // Pencarian, filter, dan halaman disimpan di URL. Nilai tak dikenal jadi default.
+    const search = (params.get('q') ?? '').slice(0, 255)
+    const status: StatusFilter = parseOption(params.get('status'), TASK_STATUSES) ?? 'all'
+    const page = parsePage(params.get('page'))
 
     const { data, isPending, isError, error, refetch, isPlaceholderData } = useProjectTasks(id, {
         page,
-        title: debouncedSearch || undefined,
+        title: search || undefined,
         status: status === 'all' ? undefined : status,
     })
 
@@ -46,7 +46,7 @@ export function ProjectTasksPage() {
         if (isError) return <ErrorState message={getErrorMessage(error)} onRetry={() => void refetch()} />
 
         if (data.items.length === 0) {
-            if (debouncedSearch !== '' || status !== 'all') {
+            if (search !== '' || status !== 'all') {
                 return <EmptyState title="No tasks found" description="No tasks match your search or filter." />
             }
             return (
@@ -75,7 +75,7 @@ export function ProjectTasksPage() {
                         <TaskRow key={task.id} task={task} />
                     ))}
                 </ul>
-                <Pagination meta={data.meta} onPageChange={setPage} />
+                <Pagination meta={data.meta} onPageChange={(next) => updateParams({ page: toPageParam(next) })} />
             </div>
         )
     }
@@ -85,17 +85,12 @@ export function ProjectTasksPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                     <div className="w-full sm:w-64">
-                        <TextField
+                        <SearchField
                             label="Search tasks"
-                            type="search"
                             placeholder="Search tasks"
-                            icon={<SearchIcon />}
                             maxLength={255}
-                            value={search}
-                            onChange={(event) => {
-                                setSearch(event.target.value)
-                                setPage(1)
-                            }}
+                            initialValue={search}
+                            onSearch={(value) => updateParams({ q: value, page: null })}
                         />
                     </div>
                     <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
@@ -104,15 +99,13 @@ export function ProjectTasksPage() {
                                 key={filter.value}
                                 type="button"
                                 aria-pressed={status === filter.value}
-                                onClick={() => {
-                                    setStatus(filter.value)
-                                    setPage(1)
-                                }}
-                                className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                                    status === filter.value
+                                onClick={() =>
+                                    updateParams({ status: filter.value === 'all' ? null : filter.value, page: null })
+                                }
+                                className={`rounded-full px-3 py-1 text-sm font-medium transition ${status === filter.value
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
-                                }`}
+                                    }`}
                             >
                                 {filter.label}
                             </button>

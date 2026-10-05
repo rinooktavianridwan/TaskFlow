@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { ErrorState, LoadingState } from '@/components/feedback/states'
+import { useToast } from '@/components/feedback/toast-context'
 import { TabNav } from '@/components/navigation/TabNav'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -15,6 +16,7 @@ export function ProjectDetailPage() {
     const { projectId } = useParams()
     const id = Number(projectId)
     const navigate = useNavigate()
+    const { showToast } = useToast()
     const { data: project, isPending, isError, error, refetch } = useProject(id)
     const deleteProject = useDeleteProject()
     const [editing, setEditing] = useState(false)
@@ -48,6 +50,7 @@ export function ProjectDetailPage() {
         setDeleteError(null)
         try {
             await deleteProject.mutateAsync(id)
+            showToast('Project deleted.')
             navigate('/projects', { replace: true })
         } catch (error) {
             setDeleteError(getErrorMessage(error))

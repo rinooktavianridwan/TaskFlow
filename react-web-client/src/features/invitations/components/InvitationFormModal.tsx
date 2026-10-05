@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useToast } from '@/components/feedback/toast-context'
 import { Button } from '@/components/ui/Button'
 import { AtSymbolIcon } from '@/components/ui/icons'
 import { Modal } from '@/components/ui/Modal'
@@ -27,6 +28,7 @@ export function InvitationFormModal({ open, onClose, projectId }: InvitationForm
 
 function InvitationForm({ projectId, onClose }: { projectId: number; onClose: () => void }) {
     const createInvitation = useCreateInvitation(projectId)
+    const { showToast } = useToast()
     const [formError, setFormError] = useState<string | null>(null)
     const {
         register,
@@ -43,6 +45,7 @@ function InvitationForm({ projectId, onClose }: { projectId: number; onClose: ()
         try {
             await createInvitation.mutateAsync(values)
             onClose()
+            showToast(`Invitation sent to ${values.email}.`)
         } catch (error) {
             // 422: email sudah member / masih ada undangan pending untuk email itu.
             if (!applyFieldErrors(error, setError)) setFormError(getErrorMessage(error))

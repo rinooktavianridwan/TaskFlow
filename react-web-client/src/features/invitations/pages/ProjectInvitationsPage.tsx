@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '@/components/feedback/states'
+import { useToast } from '@/components/feedback/toast-context'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Pagination } from '@/components/ui/Pagination'
 import { canManageProject } from '@/features/projects/permissions'
 import { useProject } from '@/features/projects/queries'
 import { getErrorMessage } from '@/lib/form-errors'
+import { parseOption, parsePage, toPageParam, useUrlParams } from '@/lib/use-url-params'
 import { InvitationFormModal } from '../components/InvitationFormModal'
 import { InvitationRow } from '../components/InvitationRow'
 import { useInvitations, useRevokeInvitation } from '../queries'
@@ -35,11 +37,14 @@ export function ProjectInvitationsPage() {
 }
 
 function InvitationsContent({ projectId }: { projectId: number }) {
-    const [status, setStatus] = useState<StatusFilter>('all')
-    const [page, setPage] = useState(1)
+    const { showToast } = useToast()
+    const [params, updateParams] = useUrlParams()
     const [inviting, setInviting] = useState(false)
     const [pendingRevoke, setPendingRevoke] = useState<Invitation | null>(null)
     const [revokeError, setRevokeError] = useState<string | null>(null)
+    // Filter dan halaman disimpan di URL. Nilai tak dikenal jatuh ke default.
+    const status: StatusFilter = parseOption(params.get('status'), INVITATION_STATUSES) ?? 'all'
+    const page = parsePage(params.get('page'))
 
     const { data, isPending, isError, error, refetch, isPlaceholderData } = useInvitations(projectId, {
         page,
@@ -52,6 +57,7 @@ function InvitationsContent({ projectId }: { projectId: number }) {
         try {
             await revokeInvitation.mutateAsync(invitation.id)
             setPendingRevoke(null)
+            showToast('Invitation revoked.')
         } catch (error) {
             // Mis. "Only pending invitations can be revoked." bila sudah diterima di waktu bersamaan.
             setRevokeError(getErrorMessage(error))
@@ -96,7 +102,7 @@ function InvitationsContent({ projectId }: { projectId: number }) {
                         <InvitationRow key={invitation.id} invitation={invitation} onRevoke={openRevoke} />
                     ))}
                 </ul>
-                <Pagination meta={data.meta} onPageChange={setPage} />
+                <Pagination meta={data.meta} onPageChange={(next) => updateParams({ page: toPageParam(next) })} />
             </div>
         )
     }
@@ -110,13 +116,12 @@ function InvitationsContent({ projectId }: { projectId: number }) {
                             key={filter.value}
                             type="button"
                             aria-pressed={status === filter.value}
-                            onClick={() => {
-                                setStatus(filter.value)
-                                setPage(1)
-                            }}
+                            onClick={() =>
+                                updateParams({ status: filter.value === 'all' ? null : filter.value, page: null })
+                            }
                             className={`rounded-full px-3 py-1 text-sm font-medium transition ${status === filter.value
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
                                 }`}
                         >
                             {filter.label}

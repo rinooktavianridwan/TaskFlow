@@ -1,24 +1,24 @@
 import { useState } from 'react'
 import { EmptyState, ErrorState, LoadingState } from '@/components/feedback/states'
 import { Button } from '@/components/ui/Button'
-import { SearchIcon } from '@/components/ui/icons'
 import { Pagination } from '@/components/ui/Pagination'
-import { TextField } from '@/components/ui/TextField'
+import { SearchField } from '@/components/ui/SearchField'
 import { getErrorMessage } from '@/lib/form-errors'
-import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { parsePage, toPageParam, useUrlParams } from '@/lib/use-url-params'
 import { ProjectCard } from '../components/ProjectCard'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { useProjects } from '../queries'
 
 export function ProjectsPage() {
-    const [search, setSearch] = useState('')
-    const [page, setPage] = useState(1)
+    const [params, updateParams] = useUrlParams()
     const [creating, setCreating] = useState(false)
-    const debouncedSearch = useDebouncedValue(search.trim(), 300)
+    // Pencarian dan halaman disimpan di URL: tahan refresh dan bisa dibagikan.
+    const search = (params.get('q') ?? '').slice(0, 100)
+    const page = parsePage(params.get('page'))
 
     const { data, isPending, isError, error, refetch, isPlaceholderData } = useProjects({
         page,
-        name: debouncedSearch || undefined,
+        name: search || undefined,
     })
 
     function renderContent() {
@@ -26,8 +26,8 @@ export function ProjectsPage() {
         if (isError) return <ErrorState message={getErrorMessage(error)} onRetry={() => void refetch()} />
 
         if (data.items.length === 0) {
-            return debouncedSearch ? (
-                <EmptyState title="No projects found" description={`Nothing matches "${debouncedSearch}".`} />
+            return search ? (
+                <EmptyState title="No projects found" description={`Nothing matches "${search}".`} />
             ) : (
                 <EmptyState
                     title="No projects yet"
@@ -48,7 +48,7 @@ export function ProjectsPage() {
                         <ProjectCard key={project.id} project={project} />
                     ))}
                 </div>
-                <Pagination meta={data.meta} onPageChange={setPage} />
+                <Pagination meta={data.meta} onPageChange={(next) => updateParams({ page: toPageParam(next) })} />
             </div>
         )
     }
@@ -63,17 +63,12 @@ export function ProjectsPage() {
             </div>
 
             <div className="mt-4 max-w-sm">
-                <TextField
+                <SearchField
                     label="Search projects"
-                    type="search"
                     placeholder="Search projects"
-                    icon={<SearchIcon />}
                     maxLength={100}
-                    value={search}
-                    onChange={(event) => {
-                        setSearch(event.target.value)
-                        setPage(1)
-                    }}
+                    initialValue={search}
+                    onSearch={(value) => updateParams({ q: value, page: null })}
                 />
             </div>
 

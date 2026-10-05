@@ -4,10 +4,12 @@ type TextFieldProps = ComponentProps<'input'> & {
     label: string
     showLabel?: boolean
     icon?: ReactNode
+    // Elemen di sisi kanan input, mis. tombol tampilkan password.
+    trailing?: ReactNode
     error?: string
 }
 
-export function TextField({ label, showLabel = false, icon, error, className = '', ...props }: TextFieldProps) {
+export function TextField({ label, showLabel = false, icon, trailing, error, className = '', ...props }: TextFieldProps) {
     const id = useId()
     const errorId = `${id}-error`
 
@@ -31,6 +33,7 @@ export function TextField({ label, showLabel = false, icon, error, className = '
                     className={`w-full border-none pl-2 outline-none ${className}`}
                     {...props}
                 />
+                {trailing}
             </div>
             {error && (
                 <p id={errorId} className="mt-1 ml-2 text-sm text-red-500">

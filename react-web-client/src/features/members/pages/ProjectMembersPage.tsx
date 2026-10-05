@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, LoadingState } from '@/components/feedback/states'
+import { useToast } from '@/components/feedback/toast-context'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { SearchIcon } from '@/components/ui/icons'
 import { Pagination } from '@/components/ui/Pagination'
-import { TextField } from '@/components/ui/TextField'
+import { SearchField } from '@/components/ui/SearchField'
 import { useAuth } from '@/features/auth/auth-context'
 import { canManageProject } from '@/features/projects/permissions'
 import { useProject } from '@/features/projects/queries'
+import { PROJECT_ROLE_LABELS } from '@/features/projects/roles'
 import type { ProjectRole } from '@/features/projects/types'
 import { getErrorMessage } from '@/lib/form-errors'
-import { useDebouncedValue } from '@/lib/use-debounced-value'
+import { parsePage, toPageParam, useUrlParams } from '@/lib/use-url-params'
 import { MemberRow } from '../components/MemberRow'
 import { useMembers, useRemoveMember, useUpdateMemberRole } from '../queries'
 import type { Member } from '../types'
@@ -20,20 +21,22 @@ export function ProjectMembersPage() {
     const id = Number(projectId)
     const navigate = useNavigate()
     const { user } = useAuth()
+    const { showToast } = useToast()
     // Layout induk sudah memuat project, jadi ini langsung terisi dari cache.
     const { data: project } = useProject(id)
     const canManage = canManageProject(project?.role)
 
-    const [search, setSearch] = useState('')
-    const [page, setPage] = useState(1)
+    const [params, updateParams] = useUrlParams()
     const [pendingRemoval, setPendingRemoval] = useState<Member | null>(null)
     const [removeError, setRemoveError] = useState<string | null>(null)
     const [actionError, setActionError] = useState<string | null>(null)
-    const debouncedSearch = useDebouncedValue(search.trim(), 300)
+    // Pencarian dan halaman disimpan di URL: tahan refresh dan bisa dibagikan.
+    const search = (params.get('q') ?? '').slice(0, 255)
+    const page = parsePage(params.get('page'))
 
     const { data, isPending, isError, error, refetch, isPlaceholderData } = useMembers(
         id,
-        { page, name: debouncedSearch || undefined },
+        { page, name: search || undefined },
         { keepPreviousData: true },
     )
     const updateRole = useUpdateMemberRole(id)
@@ -45,6 +48,7 @@ export function ProjectMembersPage() {
         setActionError(null)
         try {
             await updateRole.mutateAsync({ userId: member.user_id, role })
+            showToast(`${member.name} is now ${PROJECT_ROLE_LABELS[role].toLowerCase()}.`)
         } catch (error) {
             // Mis. "A project must always have at least one owner."
             setActionError(getErrorMessage(error))
@@ -56,7 +60,12 @@ export function ProjectMembersPage() {
         try {
             await removeMember.mutateAsync(member.user_id)
             setPendingRemoval(null)
-            if (member.user_id === user?.id) navigate('/projects', { replace: true })
+            if (member.user_id === user?.id) {
+                showToast('You left the project.')
+                navigate('/projects', { replace: true })
+            } else {
+                showToast(`${member.name} was removed from the project.`)
+            }
         } catch (error) {
             setRemoveError(getErrorMessage(error))
         }
@@ -77,7 +86,7 @@ export function ProjectMembersPage() {
         if (isError) return <ErrorState message={getErrorMessage(error)} onRetry={() => void refetch()} />
 
         if (data.items.length === 0) {
-            return <EmptyState title="No members found" description={`Nothing matches "${debouncedSearch}".`} />
+            return <EmptyState title="No members found" description={`Nothing matches "${search}".`} />
         }
 
         return (
@@ -95,7 +104,7 @@ export function ProjectMembersPage() {
                         />
                     ))}
                 </ul>
-                <Pagination meta={data.meta} onPageChange={setPage} />
+                <Pagination meta={data.meta} onPageChange={(next) => updateParams({ page: toPageParam(next) })} />
             </div>
         )
     }
@@ -103,17 +112,12 @@ export function ProjectMembersPage() {
     return (
         <div>
             <div className="w-full sm:w-64">
-                <TextField
+                <SearchField
                     label="Search members"
-                    type="search"
                     placeholder="Search members"
-                    icon={<SearchIcon />}
                     maxLength={255}
-                    value={search}
-                    onChange={(event) => {
-                        setSearch(event.target.value)
-                        setPage(1)
-                    }}
+                    initialValue={search}
+                    onSearch={(value) => updateParams({ q: value, page: null })}
                 />
             </div>
 
