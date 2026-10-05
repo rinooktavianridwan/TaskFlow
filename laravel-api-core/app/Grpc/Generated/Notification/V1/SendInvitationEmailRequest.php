@@ -31,9 +31,9 @@ class SendInvitationEmailRequest extends \Google\Protobuf\Internal\Message
      */
     protected $target_email = '';
     /**
-     * Generated from protobuf field <code>string token = 4 [json_name = "token"];</code>
+     * Generated from protobuf field <code>string accept_url = 5 [json_name = "acceptUrl"];</code>
      */
-    protected $token = '';
+    protected $accept_url = '';
 
     /**
      * Constructor.
@@ -44,7 +44,7 @@ class SendInvitationEmailRequest extends \Google\Protobuf\Internal\Message
      *     @type int|string $project_id
      *     @type string $project_name
      *     @type string $target_email
-     *     @type string $token
+     *     @type string $accept_url
      * }
      */
     public function __construct($data = null)
@@ -120,23 +120,23 @@ class SendInvitationEmailRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * Generated from protobuf field <code>string token = 4 [json_name = "token"];</code>
+     * Generated from protobuf field <code>string accept_url = 5 [json_name = "acceptUrl"];</code>
      * @return string
      */
-    public function getToken()
+    public function getAcceptUrl()
     {
-        return $this->token;
+        return $this->accept_url;
     }
 
     /**
-     * Generated from protobuf field <code>string token = 4 [json_name = "token"];</code>
+     * Generated from protobuf field <code>string accept_url = 5 [json_name = "acceptUrl"];</code>
      * @param string $var
      * @return $this
      */
-    public function setToken(string $var)
+    public function setAcceptUrl(string $var)
     {
         GPBUtil::checkString($var, true);
-        $this->token = $var;
+        $this->accept_url = $var;
 
         return $this;
     }

@@ -50,16 +50,23 @@ func (c *NotificationController) SendVerificationEmail(ctx context.Context, req 
 }
 
 func (c *NotificationController) SendInvitationEmail(ctx context.Context, req *pb.SendInvitationEmailRequest) (*pb.SendInvitationEmailResponse, error) {
+	if req.GetAcceptUrl() == "" {
+		return &pb.SendInvitationEmailResponse{
+			Success: false,
+			Message: "accept_url is required",
+		}, nil
+	}
+
 	subject := fmt.Sprintf(
 		"Undangan bergabung ke project %s di TaskFlow",
 		req.GetProjectName(),
 	)
 	body := fmt.Sprintf(
 		"Halo,\n\nKamu diundang bergabung ke project %s di TaskFlow.\n\n"+
-			"Token undangan kamu: %s\n\n"+
-			"Masuk ke TaskFlow untuk menerima undangan ini.",
+			"Buka tautan berikut untuk melihat dan menerima undangan:\n%s\n\n"+
+			"Abaikan email ini jika kamu tidak merasa diundang.",
 		req.GetProjectName(),
-		req.GetToken(),
+		req.GetAcceptUrl(),
 	)
 
 	if err := c.emailService.SendEmail(ctx, contract.Email{
@@ -82,8 +89,44 @@ func (c *NotificationController) SendInvitationEmail(ctx context.Context, req *p
 	}, nil
 }
 
-func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {
-	if err := c.emailService.ScheduleTaskReminder(ctx, contract.ScheduleTaskReminderInput{
+func (c *NotificationController) SendPasswordResetEmail(ctx context.Context, req *pb.SendPasswordResetEmailRequest) (*pb.SendPasswordResetEmailResponse, error) {
+	if req.GetResetUrl() == "" {
+		return &pb.SendPasswordResetEmailResponse{
+			Success: false,
+			Message: "reset_url is required",
+		}, nil
+	}
+
+	subject := "Atur ulang password TaskFlow kamu"
+	body := fmt.Sprintf(
+		"Halo %s,\n\nKami menerima permintaan untuk mengatur ulang password akun TaskFlow kamu.\n\n"+
+			"Buka tautan berikut untuk membuat password baru:\n%s\n\n"+
+			"Jika kamu tidak merasa memintanya, abaikan email ini. Password kamu tidak akan berubah.",
+		req.GetName(),
+		req.GetResetUrl(),
+	)
+
+	if err := c.emailService.SendEmail(ctx, contract.Email{
+		To:      req.GetEmail(),
+		Type:    values.NotificationTypePasswordReset,
+		Subject: subject,
+		Body:    body,
+	}); err != nil {
+		log.Printf("gagal kirim email reset password ke %s: %v", req.GetEmail(), err)
+
+		return &pb.SendPasswordResetEmailResponse{
+			Success: false,
+			Message: err.Error(),
+		}, nil
+	}
+
+	return &pb.SendPasswordResetEmailResponse{
+		Success: true,
+		Message: "Email reset password terkirim",
+	}, nil
+}
+
+func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {	if err := c.emailService.ScheduleTaskReminder(ctx, contract.ScheduleTaskReminderInput{
 		TaskID:        req.GetTaskId(),
 		TaskTitle:     req.GetTaskTitle(),
 		ProjectName:   req.GetProjectName(),

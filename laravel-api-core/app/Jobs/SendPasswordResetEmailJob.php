@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class SendInvitationEmailJob implements ShouldQueue
+class SendPasswordResetEmailJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -19,8 +19,7 @@ class SendInvitationEmailJob implements ShouldQueue
     public int $backoff = 5;
 
     public function __construct(
-        public int $projectId,
-        public string $projectName,
+        public string $name,
         public string $email,
         public string $token,
     ) {
@@ -28,17 +27,18 @@ class SendInvitationEmailJob implements ShouldQueue
 
     public function handle(NotificationGrpcClient $client): void
     {
-        $acceptUrl = rtrim(config('app.frontend_url'), '/') . '/invitations/' . rawurlencode($this->token);
+        $resetUrl = rtrim(config('app.frontend_url'), '/')
+            . '/password-reset/' . rawurlencode($this->token)
+            . '?email=' . urlencode($this->email);
 
-        $client->sendInvitationEmail($this->projectId, $this->projectName, $this->email, $acceptUrl);
+        $client->sendPasswordResetEmail($this->name, $this->email, $resetUrl);
     }
 
     public function failed(Throwable $exception): void
     {
-        Log::error('Gagal mengirim email undangan setelah semua percobaan', [
-            'project_id' => $this->projectId,
-            'email'      => $this->email,
-            'error'      => $exception->getMessage(),
+        Log::error('Gagal mengirim email reset password setelah semua percobaan', [
+            'email' => $this->email,
+            'error' => $exception->getMessage(),
         ]);
     }
 }

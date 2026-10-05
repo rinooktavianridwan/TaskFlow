@@ -3,9 +3,10 @@ package values
 type NotificationType string
 
 const (
-	NotificationTypeVerification NotificationType = "VERIFICATION"
-	NotificationTypeInvitation   NotificationType = "INVITATION"
-	NotificationTypeTaskReminder NotificationType = "TASK_REMINDER"
+	NotificationTypeVerification  NotificationType = "VERIFICATION"
+	NotificationTypeInvitation    NotificationType = "INVITATION"
+	NotificationTypePasswordReset NotificationType = "PASSWORD_RESET"
+	NotificationTypeTaskReminder  NotificationType = "TASK_REMINDER"
 )
 
 type DeliveryStatus string

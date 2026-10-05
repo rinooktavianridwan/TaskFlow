@@ -154,7 +154,7 @@ type SendInvitationEmailRequest struct {
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	ProjectName   string                 `protobuf:"bytes,2,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	TargetEmail   string                 `protobuf:"bytes,3,opt,name=target_email,json=targetEmail,proto3" json:"target_email,omitempty"`
-	Token         string                 `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`
+	AcceptUrl     string                 `protobuf:"bytes,5,opt,name=accept_url,json=acceptUrl,proto3" json:"accept_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -210,9 +210,9 @@ func (x *SendInvitationEmailRequest) GetTargetEmail() string {
 	return ""
 }
 
-func (x *SendInvitationEmailRequest) GetToken() string {
+func (x *SendInvitationEmailRequest) GetAcceptUrl() string {
 	if x != nil {
-		return x.Token
+		return x.AcceptUrl
 	}
 	return ""
 }
@@ -270,6 +270,122 @@ func (x *SendInvitationEmailResponse) GetMessage() string {
 }
 
 // ==========================================
+// PAYLOAD: PASSWORD RESET
+// ==========================================
+type SendPasswordResetEmailRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Email string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Tautan lengkap yang dibangun Laravel, contoh: http://localhost:3000/password-reset/<token>?email=...
+	ResetUrl      string `protobuf:"bytes,3,opt,name=reset_url,json=resetUrl,proto3" json:"reset_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendPasswordResetEmailRequest) Reset() {
+	*x = SendPasswordResetEmailRequest{}
+	mi := &file_notification_v1_notification_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendPasswordResetEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendPasswordResetEmailRequest) ProtoMessage() {}
+
+func (x *SendPasswordResetEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendPasswordResetEmailRequest.ProtoReflect.Descriptor instead.
+func (*SendPasswordResetEmailRequest) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SendPasswordResetEmailRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SendPasswordResetEmailRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SendPasswordResetEmailRequest) GetResetUrl() string {
+	if x != nil {
+		return x.ResetUrl
+	}
+	return ""
+}
+
+type SendPasswordResetEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendPasswordResetEmailResponse) Reset() {
+	*x = SendPasswordResetEmailResponse{}
+	mi := &file_notification_v1_notification_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendPasswordResetEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendPasswordResetEmailResponse) ProtoMessage() {}
+
+func (x *SendPasswordResetEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notification_v1_notification_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendPasswordResetEmailResponse.ProtoReflect.Descriptor instead.
+func (*SendPasswordResetEmailResponse) Descriptor() ([]byte, []int) {
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SendPasswordResetEmailResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *SendPasswordResetEmailResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// ==========================================
 // PAYLOAD: REMINDER
 // ==========================================
 type ScheduleTaskReminderRequest struct {
@@ -286,7 +402,7 @@ type ScheduleTaskReminderRequest struct {
 
 func (x *ScheduleTaskReminderRequest) Reset() {
 	*x = ScheduleTaskReminderRequest{}
-	mi := &file_notification_v1_notification_proto_msgTypes[4]
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -298,7 +414,7 @@ func (x *ScheduleTaskReminderRequest) String() string {
 func (*ScheduleTaskReminderRequest) ProtoMessage() {}
 
 func (x *ScheduleTaskReminderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notification_v1_notification_proto_msgTypes[4]
+	mi := &file_notification_v1_notification_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +427,7 @@ func (x *ScheduleTaskReminderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduleTaskReminderRequest.ProtoReflect.Descriptor instead.
 func (*ScheduleTaskReminderRequest) Descriptor() ([]byte, []int) {
-	return file_notification_v1_notification_proto_rawDescGZIP(), []int{4}
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ScheduleTaskReminderRequest) GetTaskId() int64 {
@@ -359,7 +475,7 @@ type ScheduleTaskReminderResponse struct {
 
 func (x *ScheduleTaskReminderResponse) Reset() {
 	*x = ScheduleTaskReminderResponse{}
-	mi := &file_notification_v1_notification_proto_msgTypes[5]
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -371,7 +487,7 @@ func (x *ScheduleTaskReminderResponse) String() string {
 func (*ScheduleTaskReminderResponse) ProtoMessage() {}
 
 func (x *ScheduleTaskReminderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notification_v1_notification_proto_msgTypes[5]
+	mi := &file_notification_v1_notification_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -384,7 +500,7 @@ func (x *ScheduleTaskReminderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduleTaskReminderResponse.ProtoReflect.Descriptor instead.
 func (*ScheduleTaskReminderResponse) Descriptor() ([]byte, []int) {
-	return file_notification_v1_notification_proto_rawDescGZIP(), []int{5}
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ScheduleTaskReminderResponse) GetSuccess() bool {
@@ -410,7 +526,7 @@ type CancelTaskReminderRequest struct {
 
 func (x *CancelTaskReminderRequest) Reset() {
 	*x = CancelTaskReminderRequest{}
-	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	mi := &file_notification_v1_notification_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -422,7 +538,7 @@ func (x *CancelTaskReminderRequest) String() string {
 func (*CancelTaskReminderRequest) ProtoMessage() {}
 
 func (x *CancelTaskReminderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notification_v1_notification_proto_msgTypes[6]
+	mi := &file_notification_v1_notification_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -435,7 +551,7 @@ func (x *CancelTaskReminderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelTaskReminderRequest.ProtoReflect.Descriptor instead.
 func (*CancelTaskReminderRequest) Descriptor() ([]byte, []int) {
-	return file_notification_v1_notification_proto_rawDescGZIP(), []int{6}
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CancelTaskReminderRequest) GetTaskId() int64 {
@@ -455,7 +571,7 @@ type CancelTaskReminderResponse struct {
 
 func (x *CancelTaskReminderResponse) Reset() {
 	*x = CancelTaskReminderResponse{}
-	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	mi := &file_notification_v1_notification_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -467,7 +583,7 @@ func (x *CancelTaskReminderResponse) String() string {
 func (*CancelTaskReminderResponse) ProtoMessage() {}
 
 func (x *CancelTaskReminderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notification_v1_notification_proto_msgTypes[7]
+	mi := &file_notification_v1_notification_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -480,7 +596,7 @@ func (x *CancelTaskReminderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelTaskReminderResponse.ProtoReflect.Descriptor instead.
 func (*CancelTaskReminderResponse) Descriptor() ([]byte, []int) {
-	return file_notification_v1_notification_proto_rawDescGZIP(), []int{7}
+	return file_notification_v1_notification_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CancelTaskReminderResponse) GetSuccess() bool {
@@ -509,14 +625,22 @@ const file_notification_v1_notification_proto_rawDesc = "" +
 	"\x05token\x18\x04 \x01(\tR\x05token\"S\n" +
 	"\x1dSendVerificationEmailResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"\x97\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xad\x01\n" +
 	"\x1aSendInvitationEmailRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12!\n" +
 	"\fproject_name\x18\x02 \x01(\tR\vprojectName\x12!\n" +
-	"\ftarget_email\x18\x03 \x01(\tR\vtargetEmail\x12\x14\n" +
-	"\x05token\x18\x04 \x01(\tR\x05token\"Q\n" +
+	"\ftarget_email\x18\x03 \x01(\tR\vtargetEmail\x12\x1d\n" +
+	"\n" +
+	"accept_url\x18\x05 \x01(\tR\tacceptUrlJ\x04\b\x04\x10\x05R\x05token\"Q\n" +
 	"\x1bSendInvitationEmailResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"f\n" +
+	"\x1dSendPasswordResetEmailRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\treset_url\x18\x03 \x01(\tR\bresetUrl\"T\n" +
+	"\x1eSendPasswordResetEmailResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\xba\x01\n" +
 	"\x1bScheduleTaskReminderRequest\x12\x17\n" +
@@ -533,10 +657,11 @@ const file_notification_v1_notification_proto_rawDesc = "" +
 	"\atask_id\x18\x01 \x01(\x03R\x06taskId\"P\n" +
 	"\x1aCancelTaskReminderResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xe3\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xde\x04\n" +
 	"\x13NotificationService\x12v\n" +
 	"\x15SendVerificationEmail\x12-.notification.v1.SendVerificationEmailRequest\x1a..notification.v1.SendVerificationEmailResponse\x12p\n" +
-	"\x13SendInvitationEmail\x12+.notification.v1.SendInvitationEmailRequest\x1a,.notification.v1.SendInvitationEmailResponse\x12s\n" +
+	"\x13SendInvitationEmail\x12+.notification.v1.SendInvitationEmailRequest\x1a,.notification.v1.SendInvitationEmailResponse\x12y\n" +
+	"\x16SendPasswordResetEmail\x12..notification.v1.SendPasswordResetEmailRequest\x1a/.notification.v1.SendPasswordResetEmailResponse\x12s\n" +
 	"\x14ScheduleTaskReminder\x12,.notification.v1.ScheduleTaskReminderRequest\x1a-.notification.v1.ScheduleTaskReminderResponse\x12m\n" +
 	"\x12CancelTaskReminder\x12*.notification.v1.CancelTaskReminderRequest\x1a+.notification.v1.CancelTaskReminderResponseB/Z-go-notification-service/pb/notification/v1;v1b\x06proto3"
 
@@ -552,28 +677,32 @@ func file_notification_v1_notification_proto_rawDescGZIP() []byte {
 	return file_notification_v1_notification_proto_rawDescData
 }
 
-var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_notification_v1_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_notification_v1_notification_proto_goTypes = []any{
-	(*SendVerificationEmailRequest)(nil),  // 0: notification.v1.SendVerificationEmailRequest
-	(*SendVerificationEmailResponse)(nil), // 1: notification.v1.SendVerificationEmailResponse
-	(*SendInvitationEmailRequest)(nil),    // 2: notification.v1.SendInvitationEmailRequest
-	(*SendInvitationEmailResponse)(nil),   // 3: notification.v1.SendInvitationEmailResponse
-	(*ScheduleTaskReminderRequest)(nil),   // 4: notification.v1.ScheduleTaskReminderRequest
-	(*ScheduleTaskReminderResponse)(nil),  // 5: notification.v1.ScheduleTaskReminderResponse
-	(*CancelTaskReminderRequest)(nil),     // 6: notification.v1.CancelTaskReminderRequest
-	(*CancelTaskReminderResponse)(nil),    // 7: notification.v1.CancelTaskReminderResponse
+	(*SendVerificationEmailRequest)(nil),   // 0: notification.v1.SendVerificationEmailRequest
+	(*SendVerificationEmailResponse)(nil),  // 1: notification.v1.SendVerificationEmailResponse
+	(*SendInvitationEmailRequest)(nil),     // 2: notification.v1.SendInvitationEmailRequest
+	(*SendInvitationEmailResponse)(nil),    // 3: notification.v1.SendInvitationEmailResponse
+	(*SendPasswordResetEmailRequest)(nil),  // 4: notification.v1.SendPasswordResetEmailRequest
+	(*SendPasswordResetEmailResponse)(nil), // 5: notification.v1.SendPasswordResetEmailResponse
+	(*ScheduleTaskReminderRequest)(nil),    // 6: notification.v1.ScheduleTaskReminderRequest
+	(*ScheduleTaskReminderResponse)(nil),   // 7: notification.v1.ScheduleTaskReminderResponse
+	(*CancelTaskReminderRequest)(nil),      // 8: notification.v1.CancelTaskReminderRequest
+	(*CancelTaskReminderResponse)(nil),     // 9: notification.v1.CancelTaskReminderResponse
 }
 var file_notification_v1_notification_proto_depIdxs = []int32{
 	0, // 0: notification.v1.NotificationService.SendVerificationEmail:input_type -> notification.v1.SendVerificationEmailRequest
 	2, // 1: notification.v1.NotificationService.SendInvitationEmail:input_type -> notification.v1.SendInvitationEmailRequest
-	4, // 2: notification.v1.NotificationService.ScheduleTaskReminder:input_type -> notification.v1.ScheduleTaskReminderRequest
-	6, // 3: notification.v1.NotificationService.CancelTaskReminder:input_type -> notification.v1.CancelTaskReminderRequest
-	1, // 4: notification.v1.NotificationService.SendVerificationEmail:output_type -> notification.v1.SendVerificationEmailResponse
-	3, // 5: notification.v1.NotificationService.SendInvitationEmail:output_type -> notification.v1.SendInvitationEmailResponse
-	5, // 6: notification.v1.NotificationService.ScheduleTaskReminder:output_type -> notification.v1.ScheduleTaskReminderResponse
-	7, // 7: notification.v1.NotificationService.CancelTaskReminder:output_type -> notification.v1.CancelTaskReminderResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
+	4, // 2: notification.v1.NotificationService.SendPasswordResetEmail:input_type -> notification.v1.SendPasswordResetEmailRequest
+	6, // 3: notification.v1.NotificationService.ScheduleTaskReminder:input_type -> notification.v1.ScheduleTaskReminderRequest
+	8, // 4: notification.v1.NotificationService.CancelTaskReminder:input_type -> notification.v1.CancelTaskReminderRequest
+	1, // 5: notification.v1.NotificationService.SendVerificationEmail:output_type -> notification.v1.SendVerificationEmailResponse
+	3, // 6: notification.v1.NotificationService.SendInvitationEmail:output_type -> notification.v1.SendInvitationEmailResponse
+	5, // 7: notification.v1.NotificationService.SendPasswordResetEmail:output_type -> notification.v1.SendPasswordResetEmailResponse
+	7, // 8: notification.v1.NotificationService.ScheduleTaskReminder:output_type -> notification.v1.ScheduleTaskReminderResponse
+	9, // 9: notification.v1.NotificationService.CancelTaskReminder:output_type -> notification.v1.CancelTaskReminderResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -590,7 +719,7 @@ func file_notification_v1_notification_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notification_v1_notification_proto_rawDesc), len(file_notification_v1_notification_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

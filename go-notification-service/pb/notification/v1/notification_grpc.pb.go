@@ -21,10 +21,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NotificationService_SendVerificationEmail_FullMethodName = "/notification.v1.NotificationService/SendVerificationEmail"
-	NotificationService_SendInvitationEmail_FullMethodName   = "/notification.v1.NotificationService/SendInvitationEmail"
-	NotificationService_ScheduleTaskReminder_FullMethodName  = "/notification.v1.NotificationService/ScheduleTaskReminder"
-	NotificationService_CancelTaskReminder_FullMethodName    = "/notification.v1.NotificationService/CancelTaskReminder"
+	NotificationService_SendVerificationEmail_FullMethodName  = "/notification.v1.NotificationService/SendVerificationEmail"
+	NotificationService_SendInvitationEmail_FullMethodName    = "/notification.v1.NotificationService/SendInvitationEmail"
+	NotificationService_SendPasswordResetEmail_FullMethodName = "/notification.v1.NotificationService/SendPasswordResetEmail"
+	NotificationService_ScheduleTaskReminder_FullMethodName   = "/notification.v1.NotificationService/ScheduleTaskReminder"
+	NotificationService_CancelTaskReminder_FullMethodName     = "/notification.v1.NotificationService/CancelTaskReminder"
 )
 
 // NotificationServiceClient is the client API for NotificationService service.
@@ -33,6 +34,7 @@ const (
 type NotificationServiceClient interface {
 	SendVerificationEmail(ctx context.Context, in *SendVerificationEmailRequest, opts ...grpc.CallOption) (*SendVerificationEmailResponse, error)
 	SendInvitationEmail(ctx context.Context, in *SendInvitationEmailRequest, opts ...grpc.CallOption) (*SendInvitationEmailResponse, error)
+	SendPasswordResetEmail(ctx context.Context, in *SendPasswordResetEmailRequest, opts ...grpc.CallOption) (*SendPasswordResetEmailResponse, error)
 	ScheduleTaskReminder(ctx context.Context, in *ScheduleTaskReminderRequest, opts ...grpc.CallOption) (*ScheduleTaskReminderResponse, error)
 	CancelTaskReminder(ctx context.Context, in *CancelTaskReminderRequest, opts ...grpc.CallOption) (*CancelTaskReminderResponse, error)
 }
@@ -65,6 +67,16 @@ func (c *notificationServiceClient) SendInvitationEmail(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *notificationServiceClient) SendPasswordResetEmail(ctx context.Context, in *SendPasswordResetEmailRequest, opts ...grpc.CallOption) (*SendPasswordResetEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendPasswordResetEmailResponse)
+	err := c.cc.Invoke(ctx, NotificationService_SendPasswordResetEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *notificationServiceClient) ScheduleTaskReminder(ctx context.Context, in *ScheduleTaskReminderRequest, opts ...grpc.CallOption) (*ScheduleTaskReminderResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScheduleTaskReminderResponse)
@@ -91,6 +103,7 @@ func (c *notificationServiceClient) CancelTaskReminder(ctx context.Context, in *
 type NotificationServiceServer interface {
 	SendVerificationEmail(context.Context, *SendVerificationEmailRequest) (*SendVerificationEmailResponse, error)
 	SendInvitationEmail(context.Context, *SendInvitationEmailRequest) (*SendInvitationEmailResponse, error)
+	SendPasswordResetEmail(context.Context, *SendPasswordResetEmailRequest) (*SendPasswordResetEmailResponse, error)
 	ScheduleTaskReminder(context.Context, *ScheduleTaskReminderRequest) (*ScheduleTaskReminderResponse, error)
 	CancelTaskReminder(context.Context, *CancelTaskReminderRequest) (*CancelTaskReminderResponse, error)
 	mustEmbedUnimplementedNotificationServiceServer()
@@ -108,6 +121,9 @@ func (UnimplementedNotificationServiceServer) SendVerificationEmail(context.Cont
 }
 func (UnimplementedNotificationServiceServer) SendInvitationEmail(context.Context, *SendInvitationEmailRequest) (*SendInvitationEmailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendInvitationEmail not implemented")
+}
+func (UnimplementedNotificationServiceServer) SendPasswordResetEmail(context.Context, *SendPasswordResetEmailRequest) (*SendPasswordResetEmailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendPasswordResetEmail not implemented")
 }
 func (UnimplementedNotificationServiceServer) ScheduleTaskReminder(context.Context, *ScheduleTaskReminderRequest) (*ScheduleTaskReminderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ScheduleTaskReminder not implemented")
@@ -172,6 +188,24 @@ func _NotificationService_SendInvitationEmail_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_SendPasswordResetEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendPasswordResetEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).SendPasswordResetEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_SendPasswordResetEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).SendPasswordResetEmail(ctx, req.(*SendPasswordResetEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NotificationService_ScheduleTaskReminder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ScheduleTaskReminderRequest)
 	if err := dec(in); err != nil {
@@ -222,6 +256,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendInvitationEmail",
 			Handler:    _NotificationService_SendInvitationEmail_Handler,
+		},
+		{
+			MethodName: "SendPasswordResetEmail",
+			Handler:    _NotificationService_SendPasswordResetEmail_Handler,
 		},
 		{
 			MethodName: "ScheduleTaskReminder",

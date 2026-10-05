@@ -45,6 +45,20 @@ class NotificationServiceClient extends \Grpc\BaseStub {
     }
 
     /**
+     * @param \Notification\V1\SendPasswordResetEmailRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     * @return \Grpc\UnaryCall<\Notification\V1\SendPasswordResetEmailResponse>
+     */
+    public function SendPasswordResetEmail(\Notification\V1\SendPasswordResetEmailRequest $argument,
+      $metadata = [], $options = []) {
+        return $this->_simpleRequest('/notification.v1.NotificationService/SendPasswordResetEmail',
+        $argument,
+        ['\Notification\V1\SendPasswordResetEmailResponse', 'decode'],
+        $metadata, $options);
+    }
+
+    /**
      * @param \Notification\V1\ScheduleTaskReminderRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options

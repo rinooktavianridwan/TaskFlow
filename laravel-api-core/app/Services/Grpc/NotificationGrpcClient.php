@@ -6,6 +6,7 @@ use Grpc\ChannelCredentials;
 use Illuminate\Support\Facades\Log;
 use Notification\V1\NotificationServiceClient;
 use Notification\V1\SendInvitationEmailRequest;
+use Notification\V1\SendPasswordResetEmailRequest;
 use Notification\V1\SendVerificationEmailRequest;
 use Notification\V1\CancelTaskReminderRequest;
 use Notification\V1\ScheduleTaskReminderRequest;
@@ -61,13 +62,13 @@ class NotificationGrpcClient
         return true;
     }
 
-    public function sendInvitationEmail(int $projectId, string $projectName, string $email, string $token): bool
+    public function sendInvitationEmail(int $projectId, string $projectName, string $email, string $acceptUrl): bool
     {
         $request = new SendInvitationEmailRequest();
         $request->setProjectId($projectId);
         $request->setProjectName($projectName);
         $request->setTargetEmail($email);
-        $request->setToken($token);
+        $request->setAcceptUrl($acceptUrl);
 
         [$response, $status] = $this->client
             ->SendInvitationEmail($request, [], ['timeout' => 10_000_000])
@@ -86,6 +87,34 @@ class NotificationGrpcClient
 
         if (!$response->getSuccess()) {
             throw new RuntimeException("Email undangan gagal dikirim: {$response->getMessage()}");
+        }
+
+        return true;
+    }
+
+    public function sendPasswordResetEmail(string $name, string $email, string $resetUrl): bool
+    {
+        $request = new SendPasswordResetEmailRequest();
+        $request->setName($name);
+        $request->setEmail($email);
+        $request->setResetUrl($resetUrl);
+
+        [$response, $status] = $this->client
+            ->SendPasswordResetEmail($request, [], ['timeout' => 10_000_000])
+            ->wait();
+
+        if ($status->code !== STATUS_OK) {
+            Log::error('gRPC SendPasswordResetEmail gagal', [
+                'email'  => $email,
+                'code'   => $status->code,
+                'detail' => $status->details,
+            ]);
+
+            throw new RuntimeException("gRPC call gagal: {$status->details}");
+        }
+
+        if (!$response->getSuccess()) {
+            throw new RuntimeException("Email reset password gagal dikirim: {$response->getMessage()}");
         }
 
         return true;
