@@ -1,10 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { NotFound } from '@/components/feedback/NotFound'
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { RegisterPage } from '@/features/auth/pages/RegisterPage'
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { VerifyRegistrationPage } from '@/features/auth/pages/VerifyRegistrationPage'
 import { GuestOnly, RequireAuth } from '@/features/auth/route-guards'
+import { InvitationPage } from '@/features/invitations/pages/InvitationPage'
 import { ProjectInvitationsPage } from '@/features/invitations/pages/ProjectInvitationsPage'
+import { ReceivedInvitationsPage } from '@/features/invitations/pages/ReceivedInvitationsPage'
 import { ProjectMembersPage } from '@/features/members/pages/ProjectMembersPage'
 import { ProjectDetailPage } from '@/features/projects/pages/ProjectDetailPage'
 import { ProjectsPage } from '@/features/projects/pages/ProjectsPage'
@@ -23,9 +27,16 @@ export const router = createBrowserRouter([
                     { path: '/login', element: <LoginPage /> },
                     { path: '/register', element: <RegisterPage /> },
                     { path: '/register/verify', element: <VerifyRegistrationPage /> },
+                    { path: '/forgot-password', element: <ForgotPasswordPage /> },
+                    { path: '/password-reset/:token', element: <ResetPasswordPage /> },
                 ],
             },
         ],
+    },
+    {
+        // Tautan di email undangan: dibuka dengan atau tanpa login, jadi tidak dibungkus GuestOnly/RequireAuth.
+        element: <AuthLayout />,
+        children: [{ path: '/invitations/:token', element: <InvitationPage /> }],
     },
     {
         element: <RequireAuth />,
@@ -45,6 +56,7 @@ export const router = createBrowserRouter([
                             { path: 'invitations', element: <ProjectInvitationsPage /> },
                         ],
                     },
+                    { path: '/invitations', element: <ReceivedInvitationsPage /> },
                     { path: '/tasks/:taskId', element: <TaskDetailPage /> },
                 ],
             },

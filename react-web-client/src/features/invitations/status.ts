@@ -13,6 +13,6 @@ export const INVITATION_STATUS_LABELS: Record<InvitationDisplayStatus, string> =
 }
 
 // Backend tidak mengubah status undangan yang kedaluwarsa: tetap "pending" dengan expires_at di masa lalu.
-export function getDisplayStatus(invitation: Invitation): InvitationDisplayStatus {
+export function getDisplayStatus(invitation: Pick<Invitation, 'status' | 'expires_at'>): InvitationDisplayStatus {
     return invitation.status === 'pending' && isPast(invitation.expires_at) ? 'expired' : invitation.status
 }
