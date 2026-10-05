@@ -1,0 +1,16 @@
+services:
+  react-web-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    container_name: taskflow-web
+    ports:
+      - "3000:80"
+    networks:
+      - taskflow
+
+networks:
+  taskflow:
+    external: true

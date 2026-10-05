@@ -10,6 +10,7 @@ A multi-tenant project & task management API, built as a backend engineering por
 | Notification Service | Go, gRPC, Mailtrap API |
 | Inter-service contract | Protocol Buffers (Buf) |
 | Auth | Laravel Sanctum (SPA session-based), custom OTP email verification |
+| Frontend | React 19, Vite, TypeScript, TanStack Query, Tailwind CSS |
 | Infrastructure | Docker Compose (multi-file, `include`-based) |
 
 ## Architecture
@@ -128,9 +129,11 @@ docker exec -it taskflow-laravel php artisan key:generate
 | `taskflow-laravel` | REST API (runs migrations on startup) | 8000 |
 | `taskflow-queue` | Queue worker (sends OTP / invitation emails via gRPC) | n/a |
 | `taskflow-notification` | Go gRPC notification service | 50051 |
+| `taskflow-web` | React SPA (production build served by nginx) | 3000 |
 
 Notes:
 - Without `taskflow-queue` running, OTP and invitation emails are never sent.
+- `taskflow-web` and `pnpm dev` (in `react-web-client`) both use port 3000. For hot reload, stop the container and run `pnpm dev`.
 - The queue worker is long-running: after changing PHP code, run `docker restart taskflow-queue`.
 - Edited migrations are not re-run automatically. Reset with `docker exec -it taskflow-laravel php artisan migrate:fresh`.
 
