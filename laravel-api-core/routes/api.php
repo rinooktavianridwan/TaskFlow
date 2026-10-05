@@ -10,6 +10,9 @@ use App\Http\Controllers\ProjectTaskController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskActivityController;
 
+Route::get('/invitations/{invitation}', [InvitationAcceptanceController::class, 'show'])
+    ->middleware('throttle:30,1');
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -40,6 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Tahap 2: Validasi dan respon token undangan dari luar project
     Route::controller(InvitationAcceptanceController::class)->group(function () {
+        Route::get('/invitations', 'index');
         Route::post('/invitations/{invitation}/accept', 'accept')->middleware('can:accept,invitation');
         Route::post('/invitations/{invitation}/decline', 'decline')->middleware('can:decline,invitation');
     });

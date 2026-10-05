@@ -27,6 +27,18 @@ class InvitationService
             ->orderByDesc('id');
     }
 
+    public function receivedBy(User $user): Builder
+    {
+        return ProjectInvitation::query()
+            ->where('email', $user->email)
+            ->where('status', InvitationStatus::Pending->value)
+            ->where(function (Builder $query) {
+                $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->with('project')
+            ->orderByDesc('id');
+    }
+
     /**
      * @throws Throwable
      */

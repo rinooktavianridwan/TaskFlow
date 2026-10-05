@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('status');
             $table->dateTime('expires_at')->nullable();
             $table->timestamps();
+            $table->index(['email', 'status']);
         });
     }
 
