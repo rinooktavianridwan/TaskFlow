@@ -11,9 +11,10 @@ import type { Member } from '@/features/members/types'
 import { useMembers } from '@/features/members/queries'
 import { toDateTimeLocalValue } from '@/lib/dates'
 import { applyFieldErrors, getErrorMessage } from '@/lib/form-errors'
+import { diffTask } from '../diff'
 import { useCreateTask, useUpdateTask } from '../queries'
 import { taskSchema, type TaskFormValues } from '../schemas'
-import type { Task, TaskPayload, UpdateTaskPayload } from '../types'
+import type { Task, TaskPayload } from '../types'
 
 type TaskFormModalProps = {
     open: boolean
@@ -161,18 +162,4 @@ function TaskFormFields({ projectId, task, members, membersFailed, onClose }: Ta
             </div>
         </form>
     )
-}
-
-function sameInstant(a: string | null, b: string | null): boolean {
-    if (a === null || b === null) return a === b
-    return new Date(a).getTime() === new Date(b).getTime()
-}
-
-function diffTask(task: Task, next: TaskPayload): UpdateTaskPayload {
-    const changes: UpdateTaskPayload = {}
-    if (next.title !== task.title) changes.title = next.title
-    if (next.description !== task.description) changes.description = next.description
-    if (next.assigned_to !== task.assigned_to) changes.assigned_to = next.assigned_to
-    if (!sameInstant(next.due_date, task.due_date)) changes.due_date = next.due_date
-    return changes
 }
