@@ -27,6 +27,12 @@ export function applyFieldErrors<T extends FieldValues>(
     return true
 }
 
+// Pesan 422 untuk satu field tertentu. Berguna saat field itu bukan input di form (mis. `email` pada reset password).
+export function getFieldError(error: unknown, field: string): string | undefined {
+    if (!isAxiosError<ApiErrorBody>(error) || error.response?.status !== 422) return undefined
+    return error.response.data?.errors?.[field]?.[0]
+}
+
 export function getErrorStatus(error: unknown): number | undefined {
     return isAxiosError(error) ? error.response?.status : undefined
 }

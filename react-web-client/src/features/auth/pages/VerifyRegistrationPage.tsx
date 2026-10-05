@@ -9,19 +9,22 @@ import {
     verifyRegistrationSchema,
     type VerifyRegistrationFormValues,
 } from '@/features/auth/schemas'
+import { useRedirectParam } from '@/features/auth/use-redirect-param'
 import { applyFieldErrors, getErrorMessage } from '@/lib/form-errors'
+import { withRedirect } from '@/lib/redirect'
 
 export function VerifyRegistrationPage() {
     const [searchParams] = useSearchParams()
     const email = searchParams.get('email')
+    const redirect = useRedirectParam()
 
     // Dibuka tanpa email (mis. langsung mengetik URL): tidak ada yang bisa diverifikasi.
-    if (!email) return <Navigate to="/register" replace />
+    if (!email) return <Navigate to={withRedirect('/register', redirect)} replace />
 
-    return <VerifyRegistrationForm email={email} />
+    return <VerifyRegistrationForm email={email} redirect={redirect} />
 }
 
-function VerifyRegistrationForm({ email }: { email: string }) {
+function VerifyRegistrationForm({ email, redirect }: { email: string; redirect: string | null }) {
     const { verifyRegistration } = useAuth()
     const [formError, setFormError] = useState<string | null>(null)
     const {
@@ -74,7 +77,7 @@ function VerifyRegistrationForm({ email }: { email: string }) {
 
             <p className="text-center text-sm text-gray-600">
                 Wrong email or code expired?{' '}
-                <Link to="/register" className="font-semibold text-blue-600 hover:underline">
+                <Link to={withRedirect('/register', redirect)} className="font-semibold text-blue-600 hover:underline">
                     Start over
                 </Link>
             </p>

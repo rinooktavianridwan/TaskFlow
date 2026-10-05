@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { withRedirect } from '@/lib/redirect'
 import { useAuth } from './auth-context'
-
-type LocationState = { from?: { pathname: string; search?: string } } | null
+import { useRedirectParam } from './use-redirect-param'
 
 function FullPageLoader() {
     return <div className="grid min-h-screen place-items-center text-gray-500">Loading…</div>
@@ -12,19 +12,19 @@ export function RequireAuth() {
     const location = useLocation()
 
     if (isLoading) return <FullPageLoader />
-    if (!user) return <Navigate to="/login" replace state={{ from: location }} />
+    if (!user) {
+        // Simpan tujuan di URL (bukan location.state) supaya tahan refresh dan bisa dibawa antar halaman auth.
+        const destination = `${location.pathname}${location.search}${location.hash}`
+        return <Navigate to={withRedirect('/login', destination)} replace />
+    }
     return <Outlet />
 }
 
 export function GuestOnly() {
     const { user, isLoading } = useAuth()
-    const location = useLocation()
-    const state: LocationState = location.state
+    const redirect = useRedirectParam()
 
     if (isLoading) return <FullPageLoader />
-    if (user) {
-        const target = state?.from ? `${state.from.pathname}${state.from.search ?? ''}` : '/'
-        return <Navigate to={target} replace />
-    }
+    if (user) return <Navigate to={redirect ?? '/'} replace />
     return <Outlet />
 }

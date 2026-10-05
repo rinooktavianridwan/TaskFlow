@@ -28,3 +28,14 @@ export type VerifyRegistrationPayload = {
     email: string
     otp_code: string
 }
+
+export type ForgotPasswordPayload = {
+    email: string
+}
+
+export type ResetPasswordPayload = {
+    token: string
+    email: string
+    password: string
+    password_confirmation: string
+}

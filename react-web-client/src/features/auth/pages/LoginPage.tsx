@@ -4,13 +4,17 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { AtSymbolIcon, LockClosedIcon } from '@/components/ui/icons'
+import { PasswordField } from '@/components/ui/PasswordField'
 import { TextField } from '@/components/ui/TextField'
 import { useAuth } from '@/features/auth/auth-context'
 import { loginSchema, type LoginFormValues } from '@/features/auth/schemas'
+import { useRedirectParam } from '@/features/auth/use-redirect-param'
 import { applyFieldErrors, getErrorMessage } from '@/lib/form-errors'
+import { withRedirect } from '@/lib/redirect'
 
 export function LoginPage() {
     const { login } = useAuth()
+    const redirect = useRedirectParam()
     const [formError, setFormError] = useState<string | null>(null)
     const {
         register,
@@ -51,15 +55,22 @@ export function LoginPage() {
                 error={errors.email?.message}
                 {...register('email')}
             />
-            <TextField
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Password"
-                icon={<LockClosedIcon />}
-                error={errors.password?.message}
-                {...register('password')}
-            />
+            <div>
+                <PasswordField
+                    label="Password"
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    icon={<LockClosedIcon />}
+                    error={errors.password?.message}
+                    {...register('password')}
+                />
+                <p className="mt-1 text-right text-sm">
+                    {/* ?redirect= tidak dibawa: tautan reset di email tidak bisa membawanya kembali ke sini. */}
+                    <Link to="/forgot-password" className="font-semibold text-blue-600 hover:underline">
+                        Forgot password?
+                    </Link>
+                </p>
+            </div>
 
             <Button type="submit" loading={isSubmitting}>
                 Login
@@ -67,7 +78,7 @@ export function LoginPage() {
 
             <p className="text-center text-sm text-gray-600">
                 Don't have an account?{' '}
-                <Link to="/register" className="font-semibold text-blue-600 hover:underline">
+                <Link to={withRedirect('/register', redirect)} className="font-semibold text-blue-600 hover:underline">
                     Sign up
                 </Link>
             </p>

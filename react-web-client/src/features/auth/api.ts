@@ -1,9 +1,11 @@
 import { isAxiosError } from 'axios'
 import { http, initializeCsrfCookie } from '@/api/http'
 import type {
+    ForgotPasswordPayload,
     LoginPayload,
     RegisterPayload,
     RegisterResponse,
+    ResetPasswordPayload,
     User,
     VerifyRegistrationPayload,
 } from './types'
@@ -38,4 +40,16 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
 // Tahap 2: OTP benar -> akun dibuat dan langsung login (204).
 export async function verifyRegistration(payload: VerifyRegistrationPayload): Promise<void> {
     await http.post('/register/verify', payload)
+}
+
+// Selalu 200 dengan pesan netral, entah email terdaftar atau tidak (agar tidak membocorkan akun yang ada).
+export async function forgotPassword(payload: ForgotPasswordPayload): Promise<void> {
+    await initializeCsrfCookie()
+    await http.post('/forgot-password', payload)
+}
+
+// 200 bila berhasil. Token salah/kedaluwarsa/terpakai: 422 key `email`. Konfirmasi tidak cocok: 422 key `password`.
+export async function resetPassword(payload: ResetPasswordPayload): Promise<void> {
+    await initializeCsrfCookie()
+    await http.post('/reset-password', payload)
 }

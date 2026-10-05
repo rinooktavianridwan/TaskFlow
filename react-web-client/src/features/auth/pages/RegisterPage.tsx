@@ -4,13 +4,17 @@ import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { AtSymbolIcon, LockClosedIcon, UserIcon } from '@/components/ui/icons'
+import { PasswordField } from '@/components/ui/PasswordField'
 import { TextField } from '@/components/ui/TextField'
 import { register as registerRequest } from '@/features/auth/api'
 import { registerSchema, type RegisterFormValues } from '@/features/auth/schemas'
+import { useRedirectParam } from '@/features/auth/use-redirect-param'
 import { applyFieldErrors, getErrorMessage } from '@/lib/form-errors'
+import { withRedirect } from '@/lib/redirect'
 
 export function RegisterPage() {
     const navigate = useNavigate()
+    const redirect = useRedirectParam()
     const [formError, setFormError] = useState<string | null>(null)
     const {
         register,
@@ -24,7 +28,7 @@ export function RegisterPage() {
         try {
             // Backend menolak email berhuruf besar (bukan menormalkannya), jadi kita normalkan di sini.
             const { email } = await registerRequest({ ...values, email: values.email.toLowerCase() })
-            navigate(`/register/verify?email=${encodeURIComponent(email)}`)
+            navigate(withRedirect('/register/verify', redirect, { email }))
         } catch (error) {
             if (!applyFieldErrors(error, setError)) setFormError(getErrorMessage(error))
         }
@@ -61,18 +65,16 @@ export function RegisterPage() {
                 error={errors.email?.message}
                 {...register('email')}
             />
-            <TextField
+            <PasswordField
                 label="Password"
-                type="password"
                 autoComplete="new-password"
                 placeholder="Password"
                 icon={<LockClosedIcon />}
                 error={errors.password?.message}
                 {...register('password')}
             />
-            <TextField
+            <PasswordField
                 label="Confirm password"
-                type="password"
                 autoComplete="new-password"
                 placeholder="Confirm Password"
                 icon={<LockClosedIcon />}
@@ -86,7 +88,7 @@ export function RegisterPage() {
 
             <p className="text-center text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/login" className="font-semibold text-blue-600 hover:underline">
+                <Link to={withRedirect('/login', redirect)} className="font-semibold text-blue-600 hover:underline">
                     Login
                 </Link>
             </p>
