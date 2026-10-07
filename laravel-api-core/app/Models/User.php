@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string                            $email
  * @property Carbon|null                       $email_verified_at
  * @property string                            $password
+ * @property string                            $timezone
  * @property string|null                       $remember_token
  * @property Carbon|null                       $created_at
  * @property Carbon|null                       $updated_at
@@ -27,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Task>        $tasks
  * @property-read Collection<int, ProjectUser> $projectUsers
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'timezone'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -39,6 +40,11 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
+    protected $attributes = [
+        'timezone' => 'UTC',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -47,6 +53,7 @@ class User extends Authenticatable
             'email'             => 'string',
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'timezone'          => 'string',
             'remember_token'    => 'string',
             'created_at'        => 'datetime',
             'updated_at'        => 'datetime',
