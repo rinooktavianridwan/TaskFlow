@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { canChangeTaskStatus, canManageProject, canManageTasks } from './permissions'
+import {
+    canChangeTaskStatus,
+    canManageChecklist,
+    canManageProject,
+    canManageTasks,
+    canToggleChecklistItem,
+} from './permissions'
 
 describe('canManageProject', () => {
     it('allows only owners', () => {
@@ -46,5 +52,36 @@ describe('canChangeTaskStatus', () => {
     it('denies when the role is unknown', () => {
         expect(canChangeTaskStatus(undefined, 1, 1)).toBe(false)
         expect(canChangeTaskStatus(null, 1, 1)).toBe(false)
+    })
+})
+
+describe('canManageChecklist', () => {
+    it('allows owners and editors to add, rename and delete items', () => {
+        expect(canManageChecklist('owner')).toBe(true)
+        expect(canManageChecklist('editor')).toBe(true)
+    })
+
+    it('denies viewers (even the assignee) and unknown roles', () => {
+        expect(canManageChecklist('viewer')).toBe(false)
+        expect(canManageChecklist(undefined)).toBe(false)
+        expect(canManageChecklist(null)).toBe(false)
+    })
+})
+
+describe('canToggleChecklistItem', () => {
+    it('lets owners and editors check items on any task', () => {
+        expect(canToggleChecklistItem('owner', 99, 1)).toBe(true)
+        expect(canToggleChecklistItem('editor', null, 1)).toBe(true)
+    })
+
+    it('lets a viewer check items only on the task assigned to them', () => {
+        expect(canToggleChecklistItem('viewer', 1, 1)).toBe(true)
+        expect(canToggleChecklistItem('viewer', 2, 1)).toBe(false)
+        expect(canToggleChecklistItem('viewer', null, 1)).toBe(false)
+    })
+
+    it('denies when the role or the current user is unknown', () => {
+        expect(canToggleChecklistItem(undefined, 1, 1)).toBe(false)
+        expect(canToggleChecklistItem('viewer', 1, undefined)).toBe(false)
     })
 })

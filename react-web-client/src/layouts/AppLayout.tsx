@@ -1,12 +1,16 @@
 import { Link, Outlet } from 'react-router-dom'
+import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/features/auth/auth-context'
 import { useReceivedInvitations } from '@/features/invitations/queries'
+import { useTimezoneSync } from '@/features/profile/use-timezone-sync'
 
 export function AppLayout() {
     const { user, logout } = useAuth()
     // per_page=1: yang dibutuhkan hanya meta.total untuk lencana, bukan isinya.
     const { data: received } = useReceivedInvitations({ per_page: 1 })
     const pendingCount = received?.meta.total ?? 0
+    // Sekali saja: terapkan zona waktu browser bila akun masih berzona UTC default.
+    useTimezoneSync()
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -15,6 +19,12 @@ export function AppLayout() {
                     TaskFlow
                 </Link>
                 <div className="flex items-center gap-4 text-sm">
+                    <Link
+                        to="/daily-summary"
+                        className="rounded-xl px-3 py-1 font-medium text-gray-700 hover:bg-gray-100"
+                    >
+                        Daily summary
+                    </Link>
                     <Link to="/invitations" className="rounded-xl px-3 py-1 font-medium text-gray-700 hover:bg-gray-100">
                         Invitations
                         {pendingCount > 0 && (
@@ -24,7 +34,13 @@ export function AppLayout() {
                             </span>
                         )}
                     </Link>
-                    <span className="text-gray-600">{user?.name}</span>
+                    {user && (
+                        <Link to="/profile" className="flex items-center gap-2 rounded-xl px-2 py-1 hover:bg-gray-100">
+                            <Avatar name={user.name} />
+                            <span className="hidden text-gray-600 sm:inline">{user.name}</span>
+                            <span className="sr-only">Profile</span>
+                        </Link>
+                    )}
                     <button
                         type="button"
                         onClick={() => void logout()}

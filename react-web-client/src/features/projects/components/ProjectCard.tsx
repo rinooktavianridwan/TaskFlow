@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 import { formatDate } from '@/lib/dates'
 import type { Project } from '../types'
 import { RoleBadge } from './RoleBadge'
@@ -16,7 +17,14 @@ export function ProjectCard({ project }: { project: Project }) {
             <p className="mt-2 line-clamp-2 min-h-10 text-sm break-words text-gray-600">
                 {project.description ?? 'No description'}
             </p>
-            <p className="mt-4 text-xs text-gray-400">Created {formatDate(project.created_at)}</p>
+            <div className="mt-4">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Progress</span>
+                    <span>{project.progress}%</span>
+                </div>
+                <ProgressBar value={project.progress} label={`Progress of ${project.name}`} className="mt-1" />
+            </div>
+            <p className="mt-3 text-xs text-gray-400">Created {formatDate(project.created_at)}</p>
         </Link>
     )
 }

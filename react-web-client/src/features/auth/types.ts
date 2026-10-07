@@ -3,6 +3,8 @@ export type User = {
     name: string
     email: string
     email_verified_at: string | null
+    // Identifier IANA (mis. "Asia/Jakarta"); default "UTC".
+    timezone: string
     created_at: string
     updated_at: string
 }

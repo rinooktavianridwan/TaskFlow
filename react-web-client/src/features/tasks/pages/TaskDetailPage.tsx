@@ -4,10 +4,15 @@ import { ErrorState, LoadingState } from '@/components/feedback/states'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/features/auth/auth-context'
-import { canChangeTaskStatus, canManageTasks } from '@/features/projects/permissions'
+import {
+    canChangeTaskStatus,
+    canManageTasks,
+    canToggleChecklistItem,
+} from '@/features/projects/permissions'
 import { useProject } from '@/features/projects/queries'
 import { formatDateTime } from '@/lib/dates'
 import { getErrorMessage, getErrorStatus } from '@/lib/form-errors'
+import { ChecklistSection } from '../components/ChecklistSection'
 import { DueDate } from '../components/DueDate'
 import { StatusSelect } from '../components/StatusSelect'
 import { TaskActivityList } from '../components/TaskActivityList'
@@ -47,6 +52,7 @@ export function TaskDetailPage() {
 
     const canManage = canManageTasks(project?.role)
     const canChangeStatus = canChangeTaskStatus(project?.role, task.assigned_to, user?.id)
+    const canToggleChecklist = canToggleChecklistItem(project?.role, task.assigned_to, user?.id)
 
     async function handleDelete(target: Task) {
         setDeleteError(null)
@@ -116,6 +122,8 @@ export function TaskDetailPage() {
                     </div>
                 )}
             </div>
+
+            <ChecklistSection task={task} canEdit={canManage} canToggle={canToggleChecklist} />
 
             <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
                 <h2 className="mb-4 text-lg font-bold text-gray-800">Activity</h2>

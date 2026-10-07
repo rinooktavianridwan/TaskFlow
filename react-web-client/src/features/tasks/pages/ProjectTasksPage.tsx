@@ -21,6 +21,11 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
     ...TASK_STATUSES.map((status) => ({ value: status, label: TASK_STATUS_LABELS[status] })),
 ]
 
+const scopeOptions = [
+    { mine: false, label: 'All tasks' },
+    { mine: true, label: 'My tasks' },
+]
+
 export function ProjectTasksPage() {
     const { projectId } = useParams()
     const id = Number(projectId)
@@ -30,15 +35,18 @@ export function ProjectTasksPage() {
 
     const [params, updateParams] = useUrlParams()
     const [creating, setCreating] = useState(false)
-    // Pencarian, filter, dan halaman disimpan di URL. Nilai tak dikenal jadi default.
+    // Pencarian, filter, cakupan, dan halaman disimpan di URL. Nilai tak dikenal jadi default.
     const search = (params.get('q') ?? '').slice(0, 255)
     const status: StatusFilter = parseOption(params.get('status'), TASK_STATUSES) ?? 'all'
+    const mine = params.get('mine') === '1'
     const page = parsePage(params.get('page'))
+    const hasFilter = search !== '' || status !== 'all' || mine
 
     const { data, isPending, isError, error, refetch, isPlaceholderData } = useProjectTasks(id, {
         page,
         title: search || undefined,
         status: status === 'all' ? undefined : status,
+        mine: mine ? 1 : undefined,
     })
 
     function renderContent() {
@@ -46,8 +54,18 @@ export function ProjectTasksPage() {
         if (isError) return <ErrorState message={getErrorMessage(error)} onRetry={() => void refetch()} />
 
         if (data.items.length === 0) {
-            if (search !== '' || status !== 'all') {
-                return <EmptyState title="No tasks found" description="No tasks match your search or filter." />
+            if (hasFilter) {
+                const onlyMine = mine && search === '' && status === 'all'
+                return (
+                    <EmptyState
+                        title="No tasks found"
+                        description={
+                            onlyMine
+                                ? 'No tasks in this project are assigned to you.'
+                                : 'No tasks match your search or filter.'
+                        }
+                    />
+                )
             }
             return (
                 <EmptyState
@@ -93,6 +111,22 @@ export function ProjectTasksPage() {
                             onSearch={(value) => updateParams({ q: value, page: null })}
                         />
                     </div>
+                    <div role="group" aria-label="Task scope" className="inline-flex rounded-full bg-gray-100 p-1">
+                        {scopeOptions.map((option) => (
+                            <button
+                                key={option.label}
+                                type="button"
+                                aria-pressed={mine === option.mine}
+                                onClick={() => updateParams({ mine: option.mine ? '1' : null, page: null })}
+                                className={`rounded-full px-3 py-1 text-sm font-medium transition ${mine === option.mine
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-gray-600 hover:text-gray-800'
+                                    }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                     <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
                         {statusFilters.map((filter) => (
                             <button
@@ -103,8 +137,8 @@ export function ProjectTasksPage() {
                                     updateParams({ status: filter.value === 'all' ? null : filter.value, page: null })
                                 }
                                 className={`rounded-full px-3 py-1 text-sm font-medium transition ${status === filter.value
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
                                     }`}
                             >
                                 {filter.label}

@@ -8,3 +8,9 @@ export const taskSchema = z.object({
 })
 
 export type TaskFormValues = z.infer<typeof taskSchema>
+
+export const checklistItemSchema = z.object({
+    title: z.string().trim().min(1, 'Title is required').max(255, 'Title is too long'),
+})
+
+export type ChecklistItemFormValues = z.infer<typeof checklistItemSchema>

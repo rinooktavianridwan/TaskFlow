@@ -43,7 +43,12 @@ export function ProjectDetailPage() {
     const tabs = [
         { to: 'tasks', label: 'Tasks' },
         { to: 'members', label: 'Members' },
-        ...(isOwner ? [{ to: 'invitations', label: 'Invitations' }] : []),
+        ...(isOwner
+            ? [
+                { to: 'invitations', label: 'Invitations' },
+                { to: 'activity', label: 'Activity' },
+            ]
+            : []),
     ]
 
     async function handleDelete() {
