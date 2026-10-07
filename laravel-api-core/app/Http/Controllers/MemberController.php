@@ -33,7 +33,7 @@ class MemberController extends Controller
      */
     public function update(UpdateMemberRoleRequest $request, Project $project, User $user): JsonResponse
     {
-        $membership = $this->service->updateRole($project, $user, $request->validated('role'));
+        $membership = $this->service->updateRole($project, $user, $request->validated('role'), auth()->user());
 
         return $this->success(new MemberResource($membership), 'Member role updated successfully.');
     }

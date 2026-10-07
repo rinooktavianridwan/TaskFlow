@@ -54,7 +54,7 @@ class InvitationAcceptanceController extends Controller
      */
     public function decline(ProjectInvitation $invitation): Response
     {
-        $this->service->decline($invitation);
+        $this->service->decline($invitation, auth()->user());
 
         return $this->noContent();
     }

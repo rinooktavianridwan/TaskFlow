@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\ActivityAction;
 use App\Enums\ProjectRole;
+use App\Jobs\SyncTaskReminderJob;
 use App\Models\Project;
 use App\Models\ProjectUser;
 use App\Models\User;
-use App\Enums\TaskActivityAction;
-use App\Jobs\SyncTaskReminderJob;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,6 +15,11 @@ use Throwable;
 
 class MemberService
 {
+    public function __construct(
+        protected ActivityLogger $logger,
+    ) {
+    }
+
     public function index(Project $project, array $filter): Builder
     {
         $keyword = $filter['name'] ?? null;
@@ -33,20 +38,38 @@ class MemberService
     /**
      * @throws Throwable
      */
-    public function updateRole(Project $project, User $targetUser, string $newRole): ProjectUser
+    public function updateRole(Project $project, User $targetUser, string $newRole, User $actor): ProjectUser
     {
-        return DB::transaction(function () use ($project, $targetUser, $newRole) {
+        return DB::transaction(function () use ($project, $targetUser, $newRole, $actor) {
             $project->lockRow();
 
             $membership = $project->projectUsers()
                 ->where('user_id', $targetUser->id)
                 ->firstOrFail();
 
-            if ($membership->role === ProjectRole::Owner->value && $newRole !== ProjectRole::Owner->value) {
+            $previousRole = $membership->role;
+
+            if ($previousRole === ProjectRole::Owner->value && $newRole !== ProjectRole::Owner->value) {
                 $this->ensureNotLastOwner($project);
             }
 
             $membership->update(['role' => $newRole]);
+
+            if ($membership->wasChanged('role')) {
+                $this->logger->record(
+                    $project->id,
+                    $actor,
+                    ActivityAction::MemberRoleChanged,
+                    "{$targetUser->name}'s role changed from {$previousRole} to {$newRole}.",
+                    null,
+                    [
+                        'user_id'   => $targetUser->id,
+                        'user_name' => $targetUser->name,
+                        'from'      => $previousRole,
+                        'to'        => $newRole,
+                    ],
+                );
+            }
 
             return $membership->fresh('user');
         });
@@ -73,23 +96,38 @@ class MemberService
                 ->lockForUpdate()
                 ->get();
 
-            $description = $actor->is($targetUser)
+            $left = $actor->is($targetUser);
+
+            $description = $left
                 ? 'Task unassigned because the assignee left the project.'
                 : 'Task unassigned because the assignee was removed from the project.';
 
             foreach ($assignedTasks as $task) {
                 $task->update(['assigned_to' => null]);
 
-                $task->taskActivities()->create([
-                    'user_id'     => $actor->id,
-                    'action'      => TaskActivityAction::Assigned->value,
-                    'description' => $description,
+                $this->logger->forTask($task, $actor, ActivityAction::Assigned, $description, [
+                    'previous_assignee_id'   => $targetUser->id,
+                    'previous_assignee_name' => $targetUser->name,
                 ]);
 
                 if ($task->due_date !== null) {
                     SyncTaskReminderJob::dispatch($task->id)->afterCommit();
                 }
             }
+
+            $this->logger->record(
+                $project->id,
+                $actor,
+                $left ? ActivityAction::MemberLeft : ActivityAction::MemberRemoved,
+                $left ? "{$targetUser->name} left the project." : "{$targetUser->name} removed from the project.",
+                null,
+                [
+                    'user_id'    => $targetUser->id,
+                    'user_name'  => $targetUser->name,
+                    'user_email' => $targetUser->email,
+                    'role'       => $membership->role,
+                ],
+            );
 
             return $membership->delete();
         });

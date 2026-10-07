@@ -35,6 +35,12 @@ class ProjectPolicy
         return $project->hasRole($user, ProjectRole::Owner, ProjectRole::Editor);
     }
 
+    // timeline audit project: owner only
+    public function viewActivities(User $user, Project $project): bool
+    {
+        return $project->hasRole($user, ProjectRole::Owner);
+    }
+
     public function removeMember(User $user, Project $project, User $targetUser): bool
     {
         return $this->update($user, $project) || $user->id === $targetUser->id;

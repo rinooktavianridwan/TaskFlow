@@ -2,7 +2,7 @@
 
 use App\Enums\ProjectRole;
 use App\Models\User;
-use App\Enums\TaskActivityAction;
+use App\Enums\ActivityAction;
 use App\Enums\TaskStatus;
 
 // ---------------------------------------------------------------- LIST
@@ -222,10 +222,10 @@ test('mengeluarkan member mengosongkan assignee dan mencatat aktivitas pada task
         'assigned_to' => null,
     ]);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id'     => $task->id,
-        'user_id'     => $owner->id,
-        'action'      => TaskActivityAction::Assigned->value,
+        'actor_id'    => $owner->id,
+        'action'      => ActivityAction::Assigned->value,
         'description' => 'Task unassigned because the assignee was removed from the project.',
     ]);
 
@@ -259,10 +259,10 @@ test('member yang keluar sendiri mengosongkan assignee dan mencatat dirinya seba
         'assigned_to' => null,
     ]);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id'     => $task->id,
-        'user_id'     => $member->id,
-        'action'      => TaskActivityAction::Assigned->value,
+        'actor_id'    => $member->id,
+        'action'      => ActivityAction::Assigned->value,
         'description' => 'Task unassigned because the assignee left the project.',
     ]);
 });

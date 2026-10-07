@@ -36,6 +36,7 @@ class InvitationController extends Controller
             $project,
             $request->validated('email'),
             $request->validated('role'),
+            auth()->user(),
         );
 
         return $this->success(new InvitationResource($invitation), 'Invitation created successfully.', 201);
@@ -46,7 +47,7 @@ class InvitationController extends Controller
      */
     public function destroy(Project $project, ProjectInvitation $invitation): Response
     {
-        $this->service->delete($project, $invitation);
+        $this->service->delete($project, $invitation, auth()->user());
 
         return $this->noContent();
     }

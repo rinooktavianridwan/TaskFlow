@@ -44,9 +44,12 @@ class ProjectController extends Controller
         return $this->success(new ProjectResource($project), 'Project created successfully.', 201);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function update(UpdateProjectRequest $request, Project $project): JsonResponse
     {
-        $project = $this->service->update($project, $request->validated());
+        $project = $this->service->update($project, $request->validated(), auth()->user());
 
         return $this->success(
             new ProjectResource($this->service->withRole($project, auth()->user())),

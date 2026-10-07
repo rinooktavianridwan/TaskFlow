@@ -2,21 +2,27 @@
 
 namespace App\Services;
 
+use App\Enums\ActivityAction;
 use App\Enums\InvitationStatus;
 use App\Enums\ProjectRole;
 use App\Jobs\SendInvitationEmailJob;
 use App\Models\Project;
 use App\Models\ProjectInvitation;
+use App\Models\ProjectUser;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
-use App\Models\ProjectUser;
-use App\Models\User;
 
 class InvitationService
 {
+    public function __construct(
+        protected ActivityLogger $logger,
+    ) {
+    }
+
     public function index(Project $project, array $filter): Builder
     {
         return ProjectInvitation::query()
@@ -42,9 +48,9 @@ class InvitationService
     /**
      * @throws Throwable
      */
-    public function create(Project $project, string $email, string $role): ProjectInvitation
+    public function create(Project $project, string $email, string $role, User $actor): ProjectInvitation
     {
-        return DB::transaction(function () use ($project, $email, $role) {
+        return DB::transaction(function () use ($project, $email, $role, $actor) {
             $project->lockRow();
             if ($project->projectUsers()
                 ->whereHas('user', function (Builder $query) use ($email) {
@@ -74,6 +80,15 @@ class InvitationService
                 'expires_at' => now()->addDays(7),
             ]);
 
+            $this->logger->record(
+                $project->id,
+                $actor,
+                ActivityAction::InvitationSent,
+                "Invitation sent to {$invitation->email} as {$invitation->role}.",
+                null,
+                $this->metadata($invitation),
+            );
+
             SendInvitationEmailJob::dispatch(
                 $project->id,
                 $project->name,
@@ -88,9 +103,9 @@ class InvitationService
     /**
      * @throws Throwable
      */
-    public function delete(Project $project, ProjectInvitation $invitation): void
+    public function delete(Project $project, ProjectInvitation $invitation, User $actor): void
     {
-        DB::transaction(function () use ($project, $invitation) {
+        DB::transaction(function () use ($project, $invitation, $actor) {
             // Dikunci agar tidak berbalapan dengan accept/decline yang juga mengunci baris ini.
             $lockedInvitation = $project->invitations()
                 ->whereKey($invitation->id)
@@ -102,6 +117,15 @@ class InvitationService
                     'invitation' => ['Only pending invitations can be revoked.'],
                 ]);
             }
+
+            $this->logger->record(
+                $project->id,
+                $actor,
+                ActivityAction::InvitationRevoked,
+                "Invitation to {$lockedInvitation->email} revoked.",
+                null,
+                $this->metadata($lockedInvitation),
+            );
 
             $lockedInvitation->delete();
         });
@@ -147,15 +171,24 @@ class InvitationService
             ]);
 
             $lockedInvitation->update(['status' => InvitationStatus::Accepted->value]);
+
+            $this->logger->record(
+                $lockedInvitation->project_id,
+                $user,
+                ActivityAction::InvitationAccepted,
+                "Invitation accepted by {$lockedInvitation->email}.",
+                null,
+                $this->metadata($lockedInvitation),
+            );
         });
     }
 
     /**
      * @throws Throwable
      */
-    public function decline(ProjectInvitation $invitation): void
+    public function decline(ProjectInvitation $invitation, User $user): void
     {
-        DB::transaction(function () use ($invitation) {
+        DB::transaction(function () use ($invitation, $user) {
             $lockedInvitation = ProjectInvitation::query()
                 ->whereKey($invitation->id)
                 ->lockForUpdate()
@@ -174,6 +207,29 @@ class InvitationService
             }
 
             $lockedInvitation->update(['status' => InvitationStatus::Declined->value]);
+
+            $this->logger->record(
+                $lockedInvitation->project_id,
+                $user,
+                ActivityAction::InvitationDeclined,
+                "Invitation declined by {$lockedInvitation->email}.",
+                null,
+                $this->metadata($lockedInvitation),
+            );
         });
+    }
+
+    /**
+     * Snapshot undangan untuk log. Token sengaja tidak disertakan.
+     *
+     * @return array<string, mixed>
+     */
+    private function metadata(ProjectInvitation $invitation): array
+    {
+        return [
+            'invitation_id' => $invitation->id,
+            'email'         => $invitation->email,
+            'role'          => $invitation->role,
+        ];
     }
 }
