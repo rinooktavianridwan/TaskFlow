@@ -20,7 +20,7 @@ class ProjectTaskController extends Controller
 
     public function index(IndexProjectTaskRequest $request, Project $project): JsonResponse
     {
-        $tasks = $this->service->index($project, $request->validated())
+        $tasks = $this->service->index($project, $request->validated(), auth()->user())
             ->paginate($request->input('per_page', 15));
 
         return $this->paginated($tasks, TaskResource::class);

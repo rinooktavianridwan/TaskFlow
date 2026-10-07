@@ -35,16 +35,15 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $attributes = [
+        'timezone' => 'UTC',
+    ];
+
     /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
      */
-
-    protected $attributes = [
-        'timezone' => 'UTC',
-    ];
-
     protected function casts(): array
     {
         return [

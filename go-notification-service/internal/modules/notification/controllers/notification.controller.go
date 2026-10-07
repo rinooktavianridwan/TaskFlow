@@ -126,7 +126,8 @@ func (c *NotificationController) SendPasswordResetEmail(ctx context.Context, req
 	}, nil
 }
 
-func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {	if err := c.emailService.ScheduleTaskReminder(ctx, contract.ScheduleTaskReminderInput{
+func (c *NotificationController) ScheduleTaskReminder(ctx context.Context, req *pb.ScheduleTaskReminderRequest) (*pb.ScheduleTaskReminderResponse, error) {
+	if err := c.emailService.ScheduleTaskReminder(ctx, contract.ScheduleTaskReminderInput{
 		TaskID:        req.GetTaskId(),
 		TaskTitle:     req.GetTaskTitle(),
 		ProjectName:   req.GetProjectName(),
