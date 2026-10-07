@@ -9,6 +9,10 @@ use App\Http\Controllers\InvitationAcceptanceController;
 use App\Http\Controllers\ProjectTaskController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskActivityController;
+use App\Http\Controllers\TaskChecklistItemController;
+use App\Http\Controllers\ProjectActivityController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DailySummaryController;
 
 Route::get('/invitations/{invitation}', [InvitationAcceptanceController::class, 'show'])
     ->middleware('throttle:30,1');
@@ -65,4 +69,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(TaskActivityController::class)->group(function () {
         Route::get('/tasks/{task}/activities', 'index')->middleware('can:view,task');
     });
+
+    // Tahap 5: Checklist opsional di dalam task
+    Route::controller(TaskChecklistItemController::class)->group(function () {
+        Route::post('/tasks/{task}/checklist-items', 'store')->middleware('can:manageChecklist,task');
+        Route::patch('/checklist-items/{item}', 'update')->middleware('can:view,item');
+        Route::delete('/checklist-items/{item}', 'destroy')->middleware('can:delete,item');
+    });
+
+    // Tahap 6: Timeline aktivitas project (owner only)
+    Route::controller(ProjectActivityController::class)->group(function () {
+        Route::get('/projects/{project}/activities', 'index')->middleware('can:viewActivities,project');
+    });
+
+    // Tahap 7: Profil user yang sedang login
+    Route::controller(ProfileController::class)->group(function () {
+        Route::patch('/profile', 'update');
+        Route::put('/profile/password', 'updatePassword')->middleware('throttle:6,1');
+    });
+
+    // Tahap 7: Rangkuman aktivitas harian milik user yang sedang login
+    Route::get('/me/daily-summary', DailySummaryController::class);
 });
+
