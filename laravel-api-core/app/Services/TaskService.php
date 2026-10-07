@@ -3,32 +3,42 @@
 namespace App\Services;
 
 use App\DTOs\CreateTaskData;
+use App\Enums\ActivityAction;
 use App\Enums\ProjectRole;
-use App\Enums\TaskActivityAction;
 use App\Enums\TaskStatus;
+use App\Jobs\SyncTaskReminderJob;
 use App\Models\Project;
 use App\Models\ProjectUser;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
-use App\Jobs\SyncTaskReminderJob;
 
 class TaskService
 {
-    public function index(Project $project, array $filter): Builder
+    public function __construct(
+        protected ActivityLogger $logger,
+    ) {
+    }
+
+    public function index(Project $project, array $filter, User $user): Builder
     {
         return Task::query()
             ->where('project_id', $project->id)
             ->with('assignee')
+            ->withChecklistCounts()
             ->when($filter['title'] ?? null, function (Builder $query, string $title) {
                 $query->where('title', 'like', "%$title%");
             })
             ->when($filter['status'] ?? null, function (Builder $query, string $status) {
                 $query->where('status', $status);
+            })
+            ->when(!empty($filter['mine']), function (Builder $query) use ($user) {
+                $query->where('assigned_to', $user->id);
             })
             ->orderByDesc('id');
     }
@@ -52,7 +62,7 @@ class TaskService
                 'due_date'    => $data->dueDate,
             ]);
 
-            $this->logActivity($task, $creator, TaskActivityAction::Created, 'Task created.');
+            $this->logActivity($task, $creator, ActivityAction::Created, 'Task created.');
 
             if ($task->due_date !== null && $task->assigned_to !== null) {
                 SyncTaskReminderJob::dispatch($task->id)->afterCommit();
@@ -64,7 +74,10 @@ class TaskService
 
     public function show(Task $task): Task
     {
-        return $task->load('assignee');
+        return $task->load([
+            'assignee',
+            'checklistItems' => fn($query) => $query->orderBy('position')->orderBy('id'),
+        ]);
     }
 
     /**
@@ -92,12 +105,15 @@ class TaskService
             $task->update($data);
             $task->load('assignee');
 
+            $changes = $task->getChanges();
+
             if ($task->wasChanged('status')) {
                 $this->logActivity(
                     $task,
                     $actor,
-                    TaskActivityAction::StatusChanged,
+                    ActivityAction::StatusChanged,
                     "Status changed from {$previousStatus} to {$task->status}.",
+                    ['from' => $previousStatus, 'to' => $task->status],
                 );
             }
 
@@ -105,13 +121,23 @@ class TaskService
                 $this->logActivity(
                     $task,
                     $actor,
-                    TaskActivityAction::Assigned,
+                    ActivityAction::Assigned,
                     $task->assignee ? "Task assigned to {$task->assignee->name}." : 'Task unassigned.',
+                    [
+                        'assignee_id'   => $task->assigned_to,
+                        'assignee_name' => $task->assignee?->name,
+                    ],
                 );
             }
 
             if ($task->wasChanged(['title', 'description', 'due_date'])) {
-                $this->logActivity($task, $actor, TaskActivityAction::Updated, 'Task details updated.');
+                $this->logActivity(
+                    $task,
+                    $actor,
+                    ActivityAction::Updated,
+                    'Task details updated.',
+                    ['fields' => array_keys(Arr::only($changes, ['title', 'description', 'due_date']))],
+                );
             }
 
             if ($task->wasChanged(['title', 'due_date', 'assigned_to', 'status'])) {
@@ -125,10 +151,14 @@ class TaskService
     /**
      * @throws Throwable
      */
-    public function delete(Task $task): bool
+    public function delete(Task $task, User $actor): bool
     {
-        return DB::transaction(function () use ($task) {
-            $taskId  = $task->id;
+        return DB::transaction(function () use ($task, $actor) {
+            $taskId = $task->id;
+
+            // Dicatat sebelum dihapus; log tetap ada karena task_id tidak punya foreign key.
+            $this->logActivity($task, $actor, ActivityAction::TaskDeleted, "Task \"{$task->title}\" deleted.");
+
             $deleted = $task->delete();
 
             if ($deleted && $task->due_date !== null && $task->assigned_to !== null) {
@@ -181,12 +211,16 @@ class TaskService
         }
     }
 
-    private function logActivity(Task $task, User $actor, TaskActivityAction $action, string $description): void
-    {
-        $task->taskActivities()->create([
-            'user_id'     => $actor->id,
-            'action'      => $action->value,
-            'description' => $description,
-        ]);
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function logActivity(
+        Task $task,
+        User $actor,
+        ActivityAction $action,
+        string $description,
+        array $metadata = [],
+    ): void {
+        $this->logger->forTask($task, $actor, $action, $description, $metadata);
     }
 }

@@ -17,4 +17,9 @@ class TaskPolicy
     {
         return $task->project->hasRole($user, ProjectRole::Owner, ProjectRole::Editor);
     }
+
+    public function manageChecklist(User $user, Task $task): bool
+    {
+        return $task->project->hasRole($user, ProjectRole::Owner, ProjectRole::Editor);
+    }
 }

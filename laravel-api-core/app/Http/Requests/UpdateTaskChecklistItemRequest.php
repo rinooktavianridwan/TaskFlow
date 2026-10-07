@@ -2,12 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\TaskStatus;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class IndexProjectTaskRequest extends FormRequest
+class UpdateTaskChecklistItemRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,10 +23,8 @@ class IndexProjectTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'per_page' => 'nullable|integer|min:1|max:100',
-            'title'    => 'nullable|string|max:255',
-            'status'   => ['nullable', Rule::enum(TaskStatus::class)],
-            'mine'     => 'nullable|boolean',
+            'title'   => 'required_without:is_done|string|max:255',
+            'is_done' => 'required_without:title|boolean',
         ];
     }
 }

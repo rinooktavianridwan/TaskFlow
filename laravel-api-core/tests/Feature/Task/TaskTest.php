@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\ProjectRole;
-use App\Enums\TaskActivityAction;
+use App\Enums\ActivityAction;
 use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
@@ -53,6 +53,60 @@ test('filter daftar task yang tidak valid ditolak', function () {
         ->getJson("/api/projects/{$project->id}/tasks?status=unknown")
         ->assertUnprocessable()
         ->assertJsonValidationErrors('status');
+});
+
+test('filter mine hanya menampilkan task yang ditugaskan kepada user yang login', function () {
+    $owner  = User::factory()->create();
+    $editor = User::factory()->create();
+
+    $project = createProject($owner);
+    addMember($project, $editor, ProjectRole::Editor);
+
+    $mine = createTask($project, ['title' => 'Punya saya', 'assigned_to' => $editor->id]);
+    createTask($project, ['title' => 'Punya owner', 'assigned_to' => $owner->id]);
+    createTask($project, ['title' => 'Belum ditugaskan']);
+
+    $this->actingAs($editor)
+        ->getJson("/api/projects/{$project->id}/tasks?mine=1")
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonPath('data.items.0.id', $mine->id)
+        ->assertJsonPath('data.meta.total', 1);
+
+    $this->actingAs($editor)
+        ->getJson("/api/projects/{$project->id}/tasks")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 3);
+});
+
+test('filter mine bisa digabung dengan filter status dan mine=0 tidak memfilter', function () {
+    $owner   = User::factory()->create();
+    $project = createProject($owner);
+
+    $todo = createTask($project, ['assigned_to' => $owner->id, 'status' => TaskStatus::Todo->value]);
+    createTask($project, ['assigned_to' => $owner->id, 'status' => TaskStatus::Done->value]);
+    createTask($project);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/tasks?mine=1&status=todo")
+        ->assertOk()
+        ->assertJsonCount(1, 'data.items')
+        ->assertJsonPath('data.items.0.id', $todo->id);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/tasks?mine=0")
+        ->assertOk()
+        ->assertJsonPath('data.meta.total', 3);
+});
+
+test('nilai mine yang tidak valid ditolak', function () {
+    $owner   = User::factory()->create();
+    $project = createProject($owner);
+
+    $this->actingAs($owner)
+        ->getJson("/api/projects/{$project->id}/tasks?mine=abc")
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('mine');
 });
 
 test('daftar task berurutan dari yang terbaru dan mendukung pagination', function () {
@@ -114,10 +168,10 @@ test('owner bisa membuat task tanpa assignee dan status awal todo', function () 
 
     $task = Task::query()->where('project_id', $project->id)->firstOrFail();
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id' => $task->id,
-        'user_id' => $owner->id,
-        'action'  => TaskActivityAction::Created->value,
+        'actor_id' => $owner->id,
+        'action'  => ActivityAction::Created->value,
     ]);
 });
 
@@ -244,16 +298,16 @@ test('owner bisa mengubah detail task dan menerima response task terbaru', funct
         ->assertJsonPath('data.description', 'Deskripsi baru')
         ->assertJsonPath('data.status', TaskStatus::InProgress->value);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id' => $task->id,
-        'user_id' => $owner->id,
-        'action'  => TaskActivityAction::StatusChanged->value,
+        'actor_id' => $owner->id,
+        'action'  => ActivityAction::StatusChanged->value,
     ]);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id' => $task->id,
-        'user_id' => $owner->id,
-        'action'  => TaskActivityAction::Updated->value,
+        'actor_id' => $owner->id,
+        'action'  => ActivityAction::Updated->value,
     ]);
 });
 
@@ -275,10 +329,10 @@ test('editor bisa mengubah assignee ke member project lain', function () {
         ->assertOk()
         ->assertJsonPath('data.assigned_to', $newAssignee->id);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id' => $task->id,
-        'user_id' => $editor->id,
-        'action'  => TaskActivityAction::Assigned->value,
+        'actor_id' => $editor->id,
+        'action'  => ActivityAction::Assigned->value,
     ]);
 });
 
@@ -300,10 +354,10 @@ test('assignee hanya bisa mengubah status task yang ditugaskan kepadanya', funct
         ->assertOk()
         ->assertJsonPath('data.status', TaskStatus::Done->value);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id' => $task->id,
-        'user_id' => $assignee->id,
-        'action'  => TaskActivityAction::StatusChanged->value,
+        'actor_id' => $assignee->id,
+        'action'  => ActivityAction::StatusChanged->value,
     ]);
 });
 
@@ -398,9 +452,9 @@ test('owner bisa mencabut assignee dari task', function () {
         ->assertOk()
         ->assertJsonPath('data.assigned_to', null);
 
-    $this->assertDatabaseHas('task_activities', [
+    $this->assertDatabaseHas('activity_logs', [
         'task_id'     => $task->id,
-        'action'      => TaskActivityAction::Assigned->value,
+        'action'      => ActivityAction::Assigned->value,
         'description' => 'Task unassigned.',
     ]);
 });
@@ -420,7 +474,7 @@ test('update tanpa perubahan tidak mencatat aktivitas', function () {
         ])
         ->assertOk();
 
-    $this->assertDatabaseCount('task_activities', 0);
+    $this->assertDatabaseCount('activity_logs', 0);
 });
 
 // ---------------------------------------------------------------- DELETE

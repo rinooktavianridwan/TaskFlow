@@ -17,9 +17,9 @@ class TaskActivityResource extends JsonResource
             'task_id'     => $this->task_id,
             'action'      => $this->action,
             'description' => $this->description,
-            'user'        => $this->whenLoaded('user', fn () => [
-                'id'   => $this->user->id,
-                'name' => $this->user->name,
+            'user'        => $this->whenLoaded('actor', fn() => [
+                'id'   => $this->actor->id,
+                'name' => $this->actor->name,
             ]),
             'created_at'  => $this->created_at,
         ];

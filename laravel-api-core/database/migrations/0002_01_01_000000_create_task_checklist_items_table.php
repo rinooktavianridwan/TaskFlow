@@ -6,26 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('task_activities', function (Blueprint $table) {
+        Schema::create('task_checklist_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('task_id');
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('action');
-            $table->text('description');
+            $table->string('title');
+            $table->boolean('is_done')->default(false);
+            $table->unsignedInteger('position')->default(0);
             $table->timestamps();
+
+            $table->index(['task_id', 'position']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('task_activities');
+        Schema::dropIfExists('task_checklist_items');
     }
 };

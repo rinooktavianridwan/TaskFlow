@@ -1,19 +1,20 @@
 <?php
 
+use App\Enums\ActivityAction;
 use App\Enums\InvitationStatus;
 use App\Enums\ProjectRole;
+use App\Enums\TaskStatus;
+use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\ProjectInvitation;
 use App\Models\ProjectUser;
-use App\Models\User;
-use App\Enums\TaskStatus;
 use App\Models\Task;
-use App\Models\TaskActivity;
-use App\Enums\TaskActivityAction;
+use App\Models\TaskChecklistItem;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\TestCase;
-use Illuminate\Support\Facades\Queue;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
@@ -79,11 +80,35 @@ function createTask(Project $project, array $attributes = []): Task
 }
 
 /** Buat catatan aktivitas pada task. $user boleh null (aktivitas tanpa user). */
-function createTaskActivity(Task $task, ?User $user, array $attributes = []): TaskActivity
+function createTaskActivity(Task $task, ?User $user, array $attributes = []): ActivityLog
 {
-    return $task->taskActivities()->create(array_merge([
-        'user_id'     => $user?->id,
-        'action'      => TaskActivityAction::Updated->value,
+    return ActivityLog::create(array_merge([
+        'project_id'  => $task->project_id,
+        'task_id'     => $task->id,
+        'actor_id'    => $user?->id,
+        'action'      => ActivityAction::Updated->value,
         'description' => 'Task details updated.',
+    ], $attributes));
+}
+
+/** Buat log aktivitas tingkat project (tanpa task). */
+function createProjectActivity(Project $project, ?User $actor, ActivityAction $action, array $attributes = []): ActivityLog
+{
+    return ActivityLog::create(array_merge([
+        'project_id'  => $project->id,
+        'actor_id'    => $actor?->id,
+        'task_id'     => null,
+        'action'      => $action->value,
+        'description' => 'Aktivitas project.',
+    ], $attributes));
+}
+
+/** Buat item checklist pada task. Default: belum selesai. */
+function createChecklistItem(Task $task, array $attributes = []): TaskChecklistItem
+{
+    return $task->checklistItems()->create(array_merge([
+        'title'    => 'Item test',
+        'is_done'  => false,
+        'position' => 1,
     ], $attributes));
 }

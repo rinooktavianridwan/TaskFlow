@@ -19,6 +19,7 @@ class ProjectResource extends JsonResource
             'name'        => $this->name,
             'description' => $this->description,
             'role'        => $this->whenLoaded('projectUsers', fn() => $this->projectUsers->first()?->role),
+            'progress'    => (int)round((float)$this->progress),
             'created_at'  => $this->created_at,
             'updated_at'  => $this->updated_at,
         ];

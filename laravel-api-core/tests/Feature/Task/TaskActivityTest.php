@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\ProjectRole;
-use App\Enums\TaskActivityAction;
+use App\Enums\ActivityAction;
 use App\Models\User;
 
 // ---------------------------------------------------------------- LIST
@@ -15,11 +15,11 @@ test('semua member termasuk viewer bisa melihat riwayat aktivitas, terbaru di at
     $task = createTask($project);
 
     $first  = createTaskActivity($task, $owner, [
-        'action'      => TaskActivityAction::Created->value,
+        'action'      => ActivityAction::Created->value,
         'description' => 'Task created.',
     ]);
     $second = createTaskActivity($task, $owner, [
-        'action'      => TaskActivityAction::StatusChanged->value,
+        'action'      => ActivityAction::StatusChanged->value,
         'description' => 'Status changed from todo to done.',
     ]);
 
