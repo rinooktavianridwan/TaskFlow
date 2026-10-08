@@ -46,7 +46,16 @@ func main() {
 		dbName,
 	)
 
-	db, err := sql.Open("mysql", dsn)
+	driver := os.Getenv("DB_CONNECTION")
+	if driver == "" {
+		driver = "mysql"
+	}
+
+	if driver != "mysql" {
+		log.Fatalf("[Database] DB_CONNECTION %q tidak didukung; hanya \"mysql\"", driver)
+	}
+
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		log.Fatalf("[Database] Gagal membuka koneksi awal: %v", err)
 	}
@@ -63,9 +72,15 @@ func main() {
 	// GRPC SERVER SETUP
 	// =========================================================================
 
-	lis, err := net.Listen("tcp", ":50051")
+	grpcPort := os.Getenv("GRPC_PORT")
+	if grpcPort == "" {
+		grpcPort = "50051"
+	}
+
+	address := ":" + grpcPort
+	lis, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Fatalf("[gRPC] Gagal mendengarkan pada port 50051: %v", err)
+		log.Fatalf("[gRPC] Gagal mendengarkan pada %s: %v", address, err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -88,7 +103,7 @@ func main() {
 	// START SERVER
 	// =========================================================================
 
-	log.Println("[gRPC] go-notification-service berjalan di port :50051")
+	log.Printf("[gRPC] go-notification-service berjalan di port %s", address)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("[gRPC] Server berhenti secara tiba-tiba: %v", err)
 	}
