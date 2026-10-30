@@ -14,18 +14,18 @@ export function AppLayout() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
-                <Link to="/projects" className="text-lg font-bold text-blue-600">
+            <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-gray-200 bg-white px-4 py-3 sm:flex-nowrap sm:justify-between sm:px-6">
+                <Link to="/projects" className="shrink-0 text-lg font-bold text-blue-600">
                     TaskFlow
                 </Link>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex basis-full flex-wrap items-center justify-between gap-1 text-sm sm:basis-auto sm:justify-end sm:gap-4">
                     <Link
                         to="/daily-summary"
-                        className="rounded-xl px-3 py-1 font-medium text-gray-700 hover:bg-gray-100"
+                        className="rounded-xl px-2 py-1 font-medium text-gray-700 hover:bg-gray-100 sm:px-3"
                     >
                         Daily summary
                     </Link>
-                    <Link to="/invitations" className="rounded-xl px-3 py-1 font-medium text-gray-700 hover:bg-gray-100">
+                    <Link to="/invitations" className="rounded-xl px-2 py-1 font-medium text-gray-700 hover:bg-gray-100 sm:px-3">
                         Invitations
                         {pendingCount > 0 && (
                             <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
@@ -50,7 +50,7 @@ export function AppLayout() {
                     </button>
                 </div>
             </header>
-            <main className="mx-auto w-full max-w-6xl p-6">
+            <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">
                 <Outlet />
             </main>
         </div>
